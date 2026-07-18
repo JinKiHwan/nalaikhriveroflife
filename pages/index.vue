@@ -204,14 +204,7 @@ onMounted(() => {
 .home-page {
   display: flex;
   flex-direction: column;
-  margin: -32px -36px; // content-area 패딩 상쇄 → 풀와이드
-
-  @media (max-width: 1200px) {
-    margin: -24px -20px;
-  }
-  @media (max-width: 768px) {
-    margin: -20px -16px;
-  }
+  
 }
 
 // ── 히어로 섹션 (풀와이드 배경) ──────────────────
@@ -222,6 +215,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 min(100px, 10vw);
+
 }
 
 .hero-bg {
@@ -249,8 +244,8 @@ onMounted(() => {
   position: relative;
   z-index: 1;
   text-align: center;
-  padding: 48px 24px 56px;
   max-width: 800px;
+
 }
 
 .verse-tag {
@@ -294,16 +289,18 @@ onMounted(() => {
 
 // ── 바로가기 섹션 ────────────────────────────────
 .shortcuts-section {
-  margin-top: -24px;
+  
   position: relative;
   z-index: 2;
-  padding-bottom: 32px;
+  padding: 0 min(100px, 10vw) 32px;
+
 }
 
 .shortcut-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  
 
   @media (max-width: 900px) {
     grid-template-columns: repeat(2, 1fr);
@@ -387,7 +384,7 @@ onMounted(() => {
 
 // ── 3열 정보 섹션 ────────────────────────────────
 .info-section {
-  padding-bottom: 48px;
+  padding: 0 min(100px, 10vw) 48px
 }
 
 .info-grid {

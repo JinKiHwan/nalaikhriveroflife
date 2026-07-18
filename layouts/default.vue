@@ -683,10 +683,9 @@ const handleLogout = async () => {
   flex: 1;
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  //max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 36px;
 
   @media (max-width: 1200px) {
     padding: 24px 20px;
