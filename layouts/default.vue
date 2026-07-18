@@ -108,11 +108,15 @@
         </button>
         <span class="topbar-title mobile-only">날라흐 생명수 교회</span>
 
-        <!-- 우측: 알림 벨 -->
+        <!-- 우측: 알림 + 사용자 -->
         <div class="topbar-right">
           <button class="topbar-icon-btn" title="알림">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" fill="currentColor"/></svg>
           </button>
+          <div class="topbar-user">
+            <div class="topbar-avatar">{{ userName.charAt(0) }}</div>
+            <span class="topbar-role">{{ roleLabel }} ▾</span>
+          </div>
         </div>
       </header>
 
@@ -541,9 +545,29 @@ const handleLogout = async () => {
   flex-direction: column;
   min-height: 100vh;
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  // 몽골 지도 배경 (풀와이드)
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: $sidebar-width;
+    right: 0;
+    bottom: 0;
+    background: url('/images/mongol.png') center center / 450px auto no-repeat;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 0;
+    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
   .sidebar-collapsed & {
     margin-left: $sidebar-collapsed;
+
+    &::before {
+      left: $sidebar-collapsed;
+    }
   }
 
   @media (max-width: 768px) {
@@ -594,7 +618,7 @@ const handleLogout = async () => {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .topbar-icon-btn {
@@ -620,33 +644,51 @@ const handleLogout = async () => {
   }
 }
 
-// 콘텐츠 영역
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px 4px 4px;
+  border-radius: $radius-full;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $bg-hover;
+  }
+}
+
+.topbar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $gradient-mn;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-title;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.topbar-role {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $text-secondary;
+}
+
+// 콘텐츠 영역 (공통 1200px 중앙 정렬)
 .content-area {
   flex: 1;
-  padding: 32px 36px;
-  max-width: 1100px;
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  position: relative;
+  padding: 32px 36px;
 
-  // 몽골 지도 배경 (의사 요소로 투명하게)
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url('/images/mongol.png') center center / 450px auto no-repeat;
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  // 콘텐츠는 배경 위에
-  > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  @media (max-width: 1100px) {
+  @media (max-width: 1200px) {
     padding: 24px 20px;
   }
 
