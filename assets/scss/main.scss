@@ -1,0 +1,218 @@
+@use './variables' as *;
+
+// ── Reset ──────────────────────────────────────
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: $bg-main;
+  color: $text-primary;
+  font-family: $font-body;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ── Scrollbar ──────────────────────────────────
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: $radius-full;
+}
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+// ── Typography ─────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-title;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: $mn-blue;
+  text-decoration: none;
+  transition: $transition-fast;
+  &:hover { color: $mn-red; }
+}
+
+// ── Cards ──────────────────────────────────────
+.card {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  padding: 24px;
+  box-shadow: $shadow-sm;
+  transition: $transition-smooth;
+
+  &.hoverable:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+// ── Gradient Accent Utilities ───────────────────
+.gradient-text {
+  background: $gradient-mn;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bar {
+  height: 4px;
+  background: $gradient-mn-h;
+  border-radius: $radius-full;
+}
+
+.gradient-btn {
+  background: $gradient-mn;
+  color: $text-light !important;
+  border: none;
+}
+
+// ── Buttons ────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: $font-title;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: $radius-sm;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: $transition-smooth;
+
+  &.btn-primary {
+    background: $gradient-mn;
+    color: $text-light;
+    box-shadow: 0 2px 10px rgba($mn-red, 0.25);
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+      box-shadow: 0 4px 16px rgba($mn-red, 0.35);
+      transform: translateY(-1px);
+    }
+  }
+
+  &.btn-secondary {
+    background: #fff;
+    color: $text-primary;
+    border: 1px solid $border-color;
+    &:hover:not(:disabled) {
+      background: $bg-hover;
+      border-color: $mn-blue;
+    }
+  }
+
+  &.btn-danger {
+    background: $danger;
+    color: #fff;
+    &:hover:not(:disabled) { background: #dc2626; }
+  }
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Form Elements ──────────────────────────────
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+
+  label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.input-field {
+  background: #fff;
+  border: 1px solid $border-color;
+  border-radius: $radius-sm;
+  color: $text-primary;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-family: $font-body;
+  transition: $transition-fast;
+  outline: none;
+  width: 100%;
+
+  &:focus {
+    border-color: $mn-blue;
+    box-shadow: 0 0 0 3px rgba($mn-blue, 0.1);
+  }
+
+  &::placeholder { color: $text-muted; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; background: $bg-main; }
+}
+
+// ── Badge / Role Tags ──────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: $radius-full;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &.badge-master {
+    background: rgba($mn-red, 0.1);
+    color: $mn-red;
+    border: 1px solid rgba($mn-red, 0.25);
+  }
+  &.badge-teacher {
+    background: rgba($mn-blue, 0.1);
+    color: $mn-blue;
+    border: 1px solid rgba($mn-blue, 0.25);
+  }
+  &.badge-normal {
+    background: #f3f4f6;
+    color: $text-secondary;
+    border: 1px solid $border-color;
+  }
+}
+
+// ── Post Grid ──────────────────────────────────
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+// ── Page Transitions ───────────────────────────
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.page-enter-from { opacity: 0; transform: translateY(6px); }
+.page-leave-to   { opacity: 0; transform: translateY(-6px); }
+
+// ── Spinner ────────────────────────────────────
+.spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba($mn-blue, 0.2);
+  border-radius: 50%;
+  border-top-color: $mn-blue;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

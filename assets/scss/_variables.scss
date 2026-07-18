@@ -1,0 +1,34 @@
+// Premium Theme Color System
+$bg-main: #070a13;         // Ultra-dark deep slate blue
+$bg-card: rgba(19, 27, 46, 0.7); // Glassmorphic deep slate card
+$bg-input: #0f172a;        // Dark input fields
+$border-color: rgba(148, 163, 184, 0.12); // Translucent borders
+$border-hover: rgba(233, 196, 106, 0.3); // Subtle gold hover border
+
+// Colors
+$primary: #e9c46a;         // Warm Gold / Amber Accent
+$primary-hover: #f4a261;   // Copper Orange Accent
+$success: #10b981;         // Emerald Green
+$danger: #ef4444;          // Crimson Red
+$warning: #f59e0b;         // Warning Amber
+
+// Text Colors
+$text-primary: #f8fafc;    // Crisp near-white
+$text-secondary: #94a3b8;  // Medium slate gray
+$text-muted: #64748b;      // Muted slate gray
+$text-dark: #0f172a;
+
+// Font Families
+$font-title: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+// Layout and Borders
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 20px;
+$shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+$shadow-glow: 0 0 20px rgba(233, 196, 106, 0.15);
+
+// Transitions
+$transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-elastic: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);

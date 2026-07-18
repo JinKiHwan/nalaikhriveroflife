@@ -1,0 +1,70 @@
+// ──────────────────────────────────────────────
+// 몽골 날라흐 생명수 교회 - 디자인 토큰
+// 베이스: 화이트 / 포인트: 몽골 국기 그라데이션
+// ──────────────────────────────────────────────
+
+// 몽골 국기 포인트 컬러
+$mn-red:  #e0334a;
+$mn-blue: #1a85d6;
+
+// Gradient definitions
+$gradient-mn: linear-gradient(135deg, $mn-red 0%, $mn-blue 50%, $mn-red 100%);
+$gradient-mn-h: linear-gradient(90deg, $mn-red 0%, $mn-blue 50%, $mn-red 100%);
+
+// Background & Surface
+$bg-main:    #f5f6fa;
+$bg-sidebar: #ffffff;
+$bg-card:    #ffffff;
+$bg-hover:   #f0f4ff;
+
+// Text
+$text-primary:   #111827;
+$text-secondary: #6b7280;
+$text-muted:     #9ca3af;
+$text-light:     #ffffff;
+
+// Borders
+$border-color: #e5e7eb;
+$border-focus: $mn-blue;
+
+// Status
+$success: #10b981;
+$danger:  #ef4444;
+$warning: #f59e0b;
+
+// Sidebar dimensions
+$sidebar-width: 220px;
+$sidebar-collapsed: 68px;
+$header-height: 64px;
+
+// Radii
+$radius-sm:  6px;
+$radius-md:  12px;
+$radius-lg:  18px;
+$radius-full: 9999px;
+
+// Shadows
+$shadow-sm:      0 1px 4px rgba(0,0,0,0.07);
+$shadow-md:      0 4px 16px rgba(0,0,0,0.10);
+$shadow-sidebar: 2px 0 12px rgba(0,0,0,0.06);
+
+// Fonts
+$font-title: 'Outfit', 'Inter', -apple-system, sans-serif;
+$font-body:  'Inter', -apple-system, sans-serif;
+
+// Transitions
+$transition-fast:     all 0.15s ease;
+$transition-smooth:   all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-elastic:  all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// ──────────────────────────────────────────────
+// 이전 변수명 호환 Alias (기존 페이지 컴포넌트용)
+// ──────────────────────────────────────────────
+$primary:        $mn-blue;
+$primary-hover:  $mn-red;
+$bg-input:       #f9fafb;
+$bg-dark:        #0f172a;
+$border-hover:   rgba($mn-blue, 0.4);
+$text-dark:      #0f172a;
+$shadow-premium: $shadow-md;
+$shadow-glow:    0 0 20px rgba($mn-blue, 0.15);
