@@ -3,7 +3,6 @@
 
     <!-- ── 히어로 영역 (풀와이드 배경 + 말씀) ──────── -->
     <section class="hero-section">
-      <div class="hero-bg"></div>
       <div class="hero-inner">
         <div class="verse-tag">오늘의 말씀</div>
         <p class="verse-korean" ref="koreanVerseRef"></p>
@@ -197,54 +196,38 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .inner {
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
   padding: 0;
 }
 
 
 .home-page {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  
+  min-height: calc(100vh - 64px);
 }
 
 // ── 히어로 섹션 (풀와이드 배경) ──────────────────
 .hero-section {
-  position: relative;
-  overflow: hidden;
+  width: 100%;
   min-height: 340px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 min(100px, 10vw);
-
-}
-
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(135deg, rgba(#a8c8ff, 0.6) 0%, rgba(#d4b8ff, 0.3) 30%, rgba(#fff, 0.1) 60%, rgba(#87ceeb, 0.4) 100%),
-    linear-gradient(180deg, #e8f0fe 0%, #f0e6ff 40%, #dbeafe 70%, #f5f6fa 100%);
-  background-size: cover;
-  z-index: 0;
-
-  // 하단 페이드아웃
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 80px;
-    background: linear-gradient(transparent, $bg-main);
-  }
+  padding: 36px clamp(20px, 5vw, 64px) 28px;
 }
 
 .hero-inner {
   position: relative;
   z-index: 1;
+  width: 100%;
   text-align: center;
-  max-width: 800px;
+  max-width: 1300px;
 
 }
 
@@ -289,10 +272,10 @@ onMounted(() => {
 
 // ── 바로가기 섹션 ────────────────────────────────
 .shortcuts-section {
-  
   position: relative;
   z-index: 2;
-  padding: 0 min(100px, 10vw) 32px;
+  width: 100%;
+  padding: 0 clamp(20px, 5vw, 64px) 32px;
 
 }
 
@@ -384,7 +367,8 @@ onMounted(() => {
 
 // ── 3열 정보 섹션 ────────────────────────────────
 .info-section {
-  padding: 0 min(100px, 10vw) 48px
+  width: 100%;
+  padding: 0 clamp(20px, 5vw, 64px) 64px;
 }
 
 .info-grid {

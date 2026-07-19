@@ -98,7 +98,7 @@
     <div v-if="isMobileMenuOpen" class="mobile-overlay" @click="isMobileMenuOpen = false"></div>
 
     <!-- ── 우측 메인 영역 ──────────────────────── -->
-    <div class="main-area">
+    <div class="main-area" :style="pageBackgroundStyle">
 
       <!-- 상단 헤더 -->
       <header class="topbar">
@@ -146,8 +146,23 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 
 const { userRole, userName, isTeacher, isMaster, logout } = useAuth()
+const route = useRoute()
 const isMobileMenuOpen = ref(false)
 const isCollapsed = ref(false)
+
+const pageBackgroundStyle = computed<Record<string, string>>(() => {
+  const path = route.path
+  let image = '/images/bg_03.webp'
+
+  if (path.startsWith('/sermons')) image = '/images/bg_01.webp'
+  else if (path.startsWith('/notices')) image = '/images/bg_02.webp'
+  else if (path.startsWith('/qt')) image = '/images/bg_04.webp'
+  else if (path.startsWith('/events')) image = '/images/bg_05.webp'
+  else if (path.startsWith('/teachers-room')) image = '/images/bg_06.webp'
+  else if (path.startsWith('/admin')) image = '/images/bg_07.webp'
+
+  return { '--page-bg-image': `url('${image}')` }
+})
 
 // 네비게이션 아이템
 const navItems = [
@@ -547,31 +562,31 @@ const handleLogout = async () => {
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 
-  // 몽골 지도 배경 (풀와이드)
+  // 모든 페이지에서 공유하는 풀와이드 배경
   &::before {
     content: '';
-    position: fixed;
-    top: 0;
-    left: $sidebar-width;
+    position: absolute;
+    top: $header-height;
+    left: 0;
     right: 0;
-    bottom: 0;
-    background: url('/images/mongol.png') center center / 450px auto no-repeat;
-    opacity: 0.03;
+    height: 565px;
+    background:
+      linear-gradient(180deg, rgba(#f7faff, 0.7) 0%, rgba(#f5f6fa, 0.58) 58%, $bg-main 100%),
+      var(--page-bg-image) center top / cover no-repeat;
     pointer-events: none;
     z-index: 0;
-    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .sidebar-collapsed & {
     margin-left: $sidebar-collapsed;
-
-    &::before {
-      left: $sidebar-collapsed;
-    }
   }
 
   @media (max-width: 768px) {
     margin-left: 0 !important;
+
+    &::before {
+      height: 480px;
+    }
   }
 }
 
@@ -678,22 +693,12 @@ const handleLogout = async () => {
   color: $text-secondary;
 }
 
-// 콘텐츠 영역 (공통 1200px 중앙 정렬)
+// 콘텐츠 영역의 배경은 풀와이드, 각 페이지 콘텐츠는 공통 1300px
 .content-area {
   flex: 1;
   position: relative;
   z-index: 1;
-  //max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
-
-  @media (max-width: 1200px) {
-    padding: 24px 20px;
-  }
-
-  @media (max-width: 768px) {
-    padding: 20px 16px;
-  }
 }
 </style>
 
