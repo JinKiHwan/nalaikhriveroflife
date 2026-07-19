@@ -10,8 +10,8 @@
         </div>
         <transition name="fade-text">
           <div v-show="!isCollapsed" class="logo-text-wrap">
-            <span class="logo-name">생명수 교회</span>
-            <span class="logo-sub">날라흐</span>
+            <span class="logo-name">{{ t('church.name') }}</span>
+            <span class="logo-sub">{{ t('church.region') }}</span>
           </div>
         </transition>
       </div>
@@ -41,11 +41,11 @@
           to="/teachers-room"
           class="nav-item"
           active-class="active"
-          @mouseenter="(e: MouseEvent) => showTooltip(e, '선생님방')"
+          @mouseenter="(e: MouseEvent) => showTooltip(e, t('nav.teachers'))"
           @mouseleave="hideTooltip"
         >
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="currentColor"/></svg>
-          <span class="nav-label">선생님방</span>
+          <span class="nav-label">{{ t('nav.teachers') }}</span>
         </nuxt-link>
 
         <!-- 관리자 전용 -->
@@ -54,16 +54,16 @@
           to="/admin"
           class="nav-item"
           active-class="active"
-          @mouseenter="(e: MouseEvent) => showTooltip(e, '관리자')"
+          @mouseenter="(e: MouseEvent) => showTooltip(e, t('nav.admin'))"
           @mouseleave="hideTooltip"
         >
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>
-          <span class="nav-label">관리자</span>
+          <span class="nav-label">{{ t('nav.admin') }}</span>
         </nuxt-link>
       </nav>
 
       <!-- 사이드바 접기/펼치기 버튼 -->
-      <button class="collapse-toggle" @click="toggleCollapse" :title="isCollapsed ? '사이드바 펼치기' : '사이드바 접기'">
+      <button class="collapse-toggle" @click="toggleCollapse" :title="isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')">
         <svg class="collapse-icon" :class="{ rotated: isCollapsed }" viewBox="0 0 24 24" fill="none">
           <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor"/>
         </svg>
@@ -86,7 +86,7 @@
             </div>
           </transition>
           <transition name="fade-text">
-            <button v-show="!isCollapsed" @click="handleLogout" class="logout-btn" title="로그아웃">
+            <button v-show="!isCollapsed" @click="handleLogout" class="logout-btn" :title="t('auth.logout')">
               <svg viewBox="0 0 24 24" fill="none"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" fill="currentColor"/></svg>
             </button>
           </transition>
@@ -106,17 +106,22 @@
         <button class="hamburger-btn mobile-only" @click="isMobileMenuOpen = !isMobileMenuOpen">
           <svg viewBox="0 0 24 24" fill="none"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" fill="currentColor"/></svg>
         </button>
-        <span class="topbar-title mobile-only">날라흐 생명수 교회</span>
+        <span class="topbar-title mobile-only">{{ t('church.fullName') }}</span>
 
-        <!-- 우측: 알림 + 사용자 -->
+        <!-- 우측: 언어 선택 -->
         <div class="topbar-right">
-          <button class="topbar-icon-btn" title="알림">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" fill="currentColor"/></svg>
-          </button>
-          <div class="topbar-user">
-            <div class="topbar-avatar">{{ userName.charAt(0) }}</div>
-            <span class="topbar-role">{{ roleLabel }} ▾</span>
-          </div>
+          <label class="language-selector">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.92 6h-3.03a15.7 15.7 0 00-1.38-3.56A8.04 8.04 0 0118.92 8zM12 4c.83 1.2 1.47 2.53 1.82 4h-3.64A13.6 13.6 0 0112 4zM4.26 14a8.2 8.2 0 010-4h3.39a16.4 16.4 0 000 4H4.26zm.82 2h3.03c.3 1.27.77 2.47 1.38 3.56A8.04 8.04 0 015.08 16zM8.11 8H5.08a8.04 8.04 0 014.41-3.56A15.7 15.7 0 008.11 8zM12 20a13.6 13.6 0 01-1.82-4h3.64A13.6 13.6 0 0112 20zm2.22-6H9.78a14.4 14.4 0 010-4h4.44a14.4 14.4 0 010 4zm.29 5.56A15.7 15.7 0 0015.89 16h3.03a8.04 8.04 0 01-4.41 3.56zM16.35 14a16.4 16.4 0 000-4h3.39a8.2 8.2 0 010 4h-3.39z" fill="currentColor"/>
+            </svg>
+            <select v-model="selectedLanguage" :aria-label="t('language.select')">
+              <option value="ko">{{ t('language.ko') }}</option>
+              <option value="mn">{{ t('language.mn') }}</option>
+            </select>
+            <svg class="language-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </label>
         </div>
       </header>
 
@@ -146,6 +151,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 
 const { userRole, userName, isTeacher, isMaster, logout } = useAuth()
+const { language: selectedLanguage, t } = useLanguage()
 const route = useRoute()
 const isMobileMenuOpen = ref(false)
 const isCollapsed = ref(false)
@@ -165,13 +171,13 @@ const pageBackgroundStyle = computed<Record<string, string>>(() => {
 })
 
 // 네비게이션 아이템
-const navItems = [
-  { to: '/', label: '홈', icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z', exact: true },
-  { to: '/sermons', label: '이번주 말씀', icon: 'M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z' },
-  { to: '/notices', label: '공지사항', icon: 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z' },
-  { to: '/qt', label: 'QT 묵상', icon: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' },
-  { to: '/events', label: '성경 통독', icon: 'M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V9h14v10zM7 11h5v5H7z' },
-]
+const navItems = computed(() => [
+  { to: '/', label: t('nav.home'), icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z', exact: true },
+  { to: '/sermons', label: t('nav.sermons'), icon: 'M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z' },
+  { to: '/notices', label: t('nav.notices'), icon: 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z' },
+  { to: '/qt', label: t('nav.qt'), icon: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' },
+  { to: '/events', label: t('nav.events'), icon: 'M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V9h14v10zM7 11h5v5H7z' },
+])
 
 // ── 말풍선 (position: fixed, body에 렌더) ──────
 const tooltip = reactive({
@@ -207,6 +213,7 @@ onMounted(() => {
   if (process.client) {
     const saved = localStorage.getItem('sidebar-collapsed')
     if (saved === 'true') isCollapsed.value = true
+
   }
 })
 
@@ -219,9 +226,9 @@ const toggleCollapse = () => {
 }
 
 const roleLabel = computed(() => {
-  if (userRole.value === 'master') return '마스터'
-  if (userRole.value === 'teacher') return '교사'
-  return '성도'
+  if (userRole.value === 'master') return t('role.master')
+  if (userRole.value === 'teacher') return t('role.teacher')
+  return t('role.normal')
 })
 
 const handleLogout = async () => {
@@ -555,6 +562,7 @@ const handleLogout = async () => {
 // ── 우측 메인 영역 ───────────────────────────────
 .main-area {
   flex: 1;
+  min-width: 0;
   margin-left: $sidebar-width;
   display: flex;
   flex-direction: column;
@@ -636,66 +644,74 @@ const handleLogout = async () => {
   gap: 12px;
 }
 
-.topbar-icon-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  color: $text-secondary;
-  border-radius: $radius-sm;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-
-  svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  &:hover {
-    background: $bg-hover;
-    color: $mn-blue;
-  }
-}
-
-.topbar-user {
+.language-selector {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
-  padding: 4px 8px 4px 4px;
+  min-width: 126px;
+  height: 40px;
+  padding: 0 34px 0 12px;
+  color: $text-secondary;
+  background: #fff;
+  border: 1px solid $border-color;
   border-radius: $radius-full;
-  transition: all 0.15s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  > svg:first-child {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: $mn-blue;
+  }
 
   &:hover {
     background: $bg-hover;
+    border-color: rgba($mn-blue, 0.35);
   }
-}
 
-.topbar-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: $gradient-mn;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: $font-title;
-  font-weight: 800;
-  font-size: 0.85rem;
-}
+  &:focus-within {
+    border-color: $mn-blue;
+    box-shadow: 0 0 0 3px rgba($mn-blue, 0.1);
+  }
 
-.topbar-role {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: $text-secondary;
+  select {
+    width: 100%;
+    appearance: none;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: $text-primary;
+    cursor: pointer;
+    font-family: $font-body;
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+
+  .language-chevron {
+    position: absolute;
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 112px;
+    height: 36px;
+    padding-left: 10px;
+
+    > svg:first-child {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 // 콘텐츠 영역의 배경은 풀와이드, 각 페이지 콘텐츠는 공통 1300px
 .content-area {
   flex: 1;
+  min-width: 0;
   position: relative;
   z-index: 1;
   width: 100%;

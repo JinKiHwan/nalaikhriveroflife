@@ -2,8 +2,8 @@
   <div class="qt-page">
     <div class="qt-header">
       <div>
-        <h1>매일 QT 묵상 나눔</h1>
-        <p class="subtitle">오늘 주신 말씀을 깊이 묵상하고 성도의 은혜를 댓글로 나눕니다.</p>
+        <h1>{{ t('qt.title') }}</h1>
+        <p class="subtitle">{{ t('qt.subtitle') }}</p>
       </div>
 
       <!-- Date Switcher -->
@@ -30,7 +30,7 @@
       <!-- Left Column: QT Scripture & Content -->
       <section class="glass-card qt-body-card">
         <div v-if="qtData" class="qt-content-wrapper">
-          <div class="qt-meta-label">오늘의 말씀</div>
+          <div class="qt-meta-label">{{ t('qt.dailyWord') }}</div>
           <h2 class="qt-title">{{ qtData.title }}</h2>
           <div class="qt-passage-box">
             <svg class="bible-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -95,19 +95,19 @@
           <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
           </svg>
-          <p>선택하신 날짜의 묵상 말씀이 아직 등록되지 않았습니다.</p>
-          <p class="sub">관리자분들께서 매일 아침 업데이트를 준비 중입니다.</p>
+          <p>{{ t('qt.empty') }}</p>
+          <p class="sub">{{ t('qt.emptySub') }}</p>
         </div>
 
         <div v-else class="qt-loading">
           <div class="spinner"></div>
-          <p>묵상 말씀을 불러오는 중...</p>
+          <p>{{ t('qt.loading') }}</p>
         </div>
       </section>
 
       <!-- Right Column: Reflection Comments Feed -->
       <section class="glass-card qt-comments-card">
-        <h3>은혜 나눔 묵상 댓글 ({{ comments.length }})</h3>
+        <h3>{{ t('qt.comments') }} ({{ comments.length }})</h3>
 
         <!-- Comment Write Input -->
         <form @submit.prevent="handleCreateComment" class="comment-write-form">
@@ -115,7 +115,7 @@
             v-model="newComment" 
             rows="3" 
             required 
-            placeholder="성령님께서 오늘 주신 은혜와 깨달음을 성도들과 나누어 보세요."
+            :placeholder="t('qt.commentPlaceholder')"
             class="input-field comment-textarea"
             :disabled="!qtData || isSubmittingComment"
           ></textarea>
@@ -125,7 +125,7 @@
               class="btn btn-primary btn-sm" 
               :disabled="!qtData || isSubmittingComment || !newComment.trim()"
             >
-              묵상 등록
+              {{ t('qt.commentSubmit') }}
             </button>
           </div>
         </form>
@@ -148,13 +148,13 @@
                 @click="handleDeleteComment(c.id)" 
                 class="btn-comment-delete"
               >
-                삭제
+                {{ t('common.delete') }}
               </button>
             </div>
           </div>
 
           <div v-if="comments.length === 0" class="no-comments">
-            <p>첫 묵상 나눔을 작성하여 은혜를 나누어 보세요.</p>
+            <p>{{ t('qt.noComments') }}</p>
           </div>
         </div>
       </section>
@@ -167,6 +167,7 @@ import { ref, computed, onMounted } from 'vue'
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
 
 const { isMaster, userName, user: currentUser } = useAuth()
+const { t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 
 const currentUid = computed(() => currentUser.value?.uid || '')

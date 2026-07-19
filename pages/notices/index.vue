@@ -2,8 +2,8 @@
   <div class="notices-page">
     <div class="notices-header">
       <div>
-        <h1>공지사항</h1>
-        <p class="subtitle">교회 소식, 주간 광고 및 긴급 공지를 확인하실 수 있습니다.</p>
+        <h1>{{ t('notices.title') }}</h1>
+        <p class="subtitle">{{ t('notices.subtitle') }}</p>
       </div>
 
       <!-- Notice Create Button (Master only) -->
@@ -12,7 +12,7 @@
         @click="showCreateForm = !showCreateForm" 
         class="btn btn-primary"
       >
-        {{ showCreateForm ? '작성 취소' : '공지 작성' }}
+        {{ showCreateForm ? t('common.cancel') : t('notices.create') }}
       </button>
     </div>
 
@@ -80,20 +80,20 @@
             <svg class="pin-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12ZM8.8 14L10 12.8V4H14V12.8L15.2 14H8.8Z" fill="currentColor"/>
             </svg>
-            중요 공지
+            {{ t('notices.pinned') }}
           </span>
           <span class="notice-date">{{ formatDate(n.createdAt) }}</span>
         </div>
         <h3 class="notice-title">{{ n.title }}</h3>
         <p class="notice-excerpt">{{ getExcerpt(n.content) }}</p>
         <div class="notice-footer">
-          <span class="read-more">자세히 보기 →</span>
+          <span class="read-more">{{ t('common.viewDetail') }} →</span>
           <button 
             v-if="isMaster" 
             @click.stop="handleDeleteNotice(n.id, n.title)" 
             class="btn-delete"
           >
-            삭제
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
@@ -111,20 +111,20 @@
         <h3 class="notice-title">{{ n.title }}</h3>
         <p class="notice-excerpt">{{ getExcerpt(n.content) }}</p>
         <div class="notice-footer">
-          <span class="read-more">자세히 보기 →</span>
+          <span class="read-more">{{ t('common.viewDetail') }} →</span>
           <button 
             v-if="isMaster" 
             @click.stop="handleDeleteNotice(n.id, n.title)" 
             class="btn-delete"
           >
-            삭제
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
 
       <!-- Empty State -->
       <div v-if="pinnedNotices.length === 0 && regularNotices.length === 0" class="glass-card empty-card">
-        <p>등록된 공지사항이 없습니다.</p>
+        <p>{{ t('notices.empty') }}</p>
       </div>
     </div>
   </div>
@@ -135,6 +135,7 @@ import { ref, computed, onMounted } from 'vue'
 import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore'
 
 const { isMaster, userName } = useAuth()
+const { t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 
 const allNotices = ref<any[]>([])

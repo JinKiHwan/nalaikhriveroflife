@@ -1,24 +1,24 @@
 <template>
   <div class="events-page">
     <div class="events-header">
-      <h1>성경 통독 릴레이</h1>
-      <p class="subtitle">온 교회가 한 마음으로 하나님의 말씀을 처음부터 끝까지 함께 통독해 나갑니다.</p>
+      <h1>{{ t('events.title') }}</h1>
+      <p class="subtitle">{{ t('events.subtitle') }}</p>
     </div>
 
     <!-- Stats & Progress Section -->
     <section class="glass-card stats-card">
       <div class="stats-grid">
         <div class="stat-item">
-          <span class="stat-label">교회 전체 통독 장수</span>
-          <span class="stat-value">{{ totalChaptersSum }} / {{ TARGET_CHAPTERS }} 장</span>
+          <span class="stat-label">{{ t('events.total') }}</span>
+          <span class="stat-value">{{ totalChaptersSum }} / {{ TARGET_CHAPTERS }} {{ t('events.chapters') }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">통독 달성률</span>
+          <span class="stat-label">{{ t('events.progress') }}</span>
           <span class="stat-value percent">{{ completionPercent }}%</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">참여 성도 수</span>
-          <span class="stat-value">{{ uniqueParticipantsCount }} 명</span>
+          <span class="stat-label">{{ t('events.participants') }}</span>
+          <span class="stat-value">{{ uniqueParticipantsCount }} {{ t('events.people') }}</span>
         </div>
       </div>
 
@@ -30,8 +30,8 @@
           </div>
         </div>
         <div class="progress-labels">
-          <span>시작 (창세기)</span>
-          <span>목표 달성 (신구약 1,189장 완독)</span>
+          <span>{{ t('events.start') }}</span>
+          <span>{{ t('events.goal') }}</span>
         </div>
       </div>
     </section>
@@ -39,7 +39,7 @@
     <div class="events-content-grid">
       <!-- Left Column: Report Form -->
       <section class="glass-card report-card">
-        <h2>성경 읽기 인증하기</h2>
+        <h2>{{ t('events.report') }}</h2>
         <form @submit.prevent="handleReportReading" class="report-form">
           <div class="form-group">
             <label for="bible-book">성경 선택</label>
@@ -93,7 +93,7 @@
 
       <!-- Right Column: Timeline logs -->
       <section class="glass-card logs-card">
-        <h2>실시간 통독 피드</h2>
+        <h2>{{ t('events.feed') }}</h2>
         <div class="logs-feed">
           <div 
             v-for="l in logs" 
@@ -115,14 +115,14 @@
                   @click="handleDeleteLog(l.id, l.name)"
                   class="btn-log-delete"
                 >
-                  취소
+                  {{ t('common.cancel') }}
                 </button>
               </div>
             </div>
           </div>
 
           <div v-if="logs.length === 0" class="no-logs">
-            <p>아직 통독 기록이 없습니다. 첫 번째 주인공이 되어 보세요!</p>
+            <p>{{ t('events.noLogs') }}</p>
           </div>
         </div>
       </section>
@@ -135,6 +135,7 @@ import { ref, computed, onMounted } from 'vue'
 import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore'
 
 const { userName, user: currentUser, isMaster } = useAuth()
+const { t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 
 const TARGET_CHAPTERS = 1189 // Total chapters in the Bible (OT: 929, NT: 260)

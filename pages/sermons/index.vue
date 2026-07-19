@@ -2,8 +2,8 @@
   <div class="sermons-page">
     <div class="sermons-header">
       <div>
-        <h1>이번주 말씀</h1>
-        <p class="subtitle">주일 강단에서 선포된 하나님의 말씀을 기록하고 공유합니다.</p>
+        <h1>{{ t('sermons.title') }}</h1>
+        <p class="subtitle">{{ t('sermons.subtitle') }}</p>
       </div>
       
       <!-- Create Toggle Button (Master only) -->
@@ -12,7 +12,7 @@
         @click="showCreateForm = !showCreateForm" 
         class="btn btn-primary"
       >
-        {{ showCreateForm ? '작성 취소' : '새 말씀 등록' }}
+        {{ showCreateForm ? t('common.cancel') : t('sermons.create') }}
       </button>
     </div>
 
@@ -122,21 +122,21 @@
             {{ s.biblePassage }}
           </p>
           <div class="sermon-card-footer">
-            <span class="view-btn">자세히 보기</span>
+            <span class="view-btn">{{ t('common.viewDetail') }}</span>
             <button 
               v-if="isMaster" 
               @click.stop="handleDeleteSermon(s.id, s.title)" 
               class="btn-delete"
-              title="삭제"
+              :title="t('common.delete')"
             >
-              삭제
+              {{ t('common.delete') }}
             </button>
           </div>
         </div>
       </div>
       
       <div v-else class="glass-card empty-card">
-        <p>등록된 말씀이 없습니다.</p>
+        <p>{{ t('sermons.empty') }}</p>
       </div>
     </div>
   </div>
@@ -147,6 +147,7 @@ import { ref, onMounted } from 'vue'
 import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore'
 
 const { isMaster } = useAuth()
+const { t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 
 const sermons = ref<any[]>([])
