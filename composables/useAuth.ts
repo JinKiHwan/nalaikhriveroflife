@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -81,6 +81,7 @@ export const useAuth = () => {
     }
 
     onAuthStateChanged(auth, async (user) => {
+      isAuthReady.value = false
       authUser.value = user
       isProfileLoading.value = true
 
@@ -103,6 +104,15 @@ export const useAuth = () => {
   const waitForAuthReady = async () => {
     startAuthListener()
     if (authReadyPromise) await authReadyPromise
+    if (isAuthReady.value) return
+
+    await new Promise<void>((resolve) => {
+      const stop = watch(isAuthReady, (ready) => {
+        if (!ready) return
+        stop()
+        resolve()
+      }, { immediate: true })
+    })
   }
 
   const isAuthenticated = computed(() => !!authUser.value)
@@ -114,38 +124,91 @@ export const useAuth = () => {
   const isAdmin = computed(() => isApproved.value && (userRole.value === 'master' || userRole.value === 'vice_master'))
   const isTeacher = computed(() => isApproved.value && (userRole.value === 'teacher' || userRole.value === 'vice_master' || userRole.value === 'master'))
 
+  const waitForApprovedSession = async (timeoutMs = 6000) => {
+    await waitForAuthReady()
+    if (isApproved.value) return true
+    if (!auth?.currentUser) return false
+
+    return await new Promise<boolean>((resolve) => {
+      let settled = false
+      let timer: number | undefined
+      let stop = () => {}
+      const finish = (approved: boolean) => {
+        if (settled) return
+        settled = true
+        if (timer !== undefined) window.clearTimeout(timer)
+        stop()
+        resolve(approved)
+      }
+      stop = watch([isApproved, isProfileLoading], ([approved, loading]) => {
+        if (approved) finish(true)
+        else if (!loading && !auth.currentUser) finish(false)
+      })
+      timer = window.setTimeout(() => finish(isApproved.value), timeoutMs)
+      if (isApproved.value) finish(true)
+    })
+  }
+
+  const runWithAuthRetry = async <T>(operation: () => Promise<T>) => {
+    const approved = await waitForApprovedSession()
+    if (!approved) {
+      const error = new Error('승인된 로그인 상태가 준비되지 않았습니다.') as Error & { code: string }
+      error.code = 'auth/session-not-ready'
+      throw error
+    }
+
+    try {
+      return await operation()
+    } catch (error: any) {
+      const isPermissionError = error?.code === 'permission-denied' || error?.code === 'firestore/permission-denied'
+      if (!isPermissionError || !auth?.currentUser) throw error
+
+      await auth.currentUser.getIdToken(true)
+      await new Promise(resolve => window.setTimeout(resolve, 180))
+      return await operation()
+    }
+  }
+
   const login = async (identifier: string, password: string) => {
     if (!auth || !db) throw new Error('Firebase 연결 설정을 확인해 주세요.')
+    isAuthReady.value = false
+    isProfileLoading.value = true
 
-    const credential = await signInWithEmailAndPassword(auth, identifierToEmail(identifier), password)
-    const profile = await readProfile(db, credential.user)
+    try {
+      const credential = await signInWithEmailAndPassword(auth, identifierToEmail(identifier), password)
+      const profile = await readProfile(db, credential.user)
 
-    if (!profile) {
-      await signOut(auth)
-      const error = new Error('등록된 회원 정보가 없습니다.') as Error & { code: string }
-      error.code = 'auth/profile-not-found'
-      throw error
+      if (!profile) {
+        await signOut(auth)
+        const error = new Error('등록된 회원 정보가 없습니다.') as Error & { code: string }
+        error.code = 'auth/profile-not-found'
+        throw error
+      }
+
+      if (profile.status !== 'approved') {
+        await signOut(auth)
+        const message = profile.status === 'pending'
+          ? '마스터 계정의 가입 승인을 기다리고 있습니다.'
+          : profile.status === 'expelled'
+            ? '관리자에 의해 탈퇴 처리된 계정입니다.'
+            : '승인되지 않은 계정입니다.'
+        const error = new Error(message) as Error & { code: string }
+        error.code = profile.status === 'pending'
+          ? 'auth/pending-approval'
+          : profile.status === 'expelled'
+            ? 'auth/account-expelled'
+            : 'auth/not-approved'
+        throw error
+      }
+
+      authUser.value = credential.user
+      userProfile.value = profile
+      await credential.user.getIdToken()
+      return credential
+    } finally {
+      isProfileLoading.value = false
+      isAuthReady.value = true
     }
-
-    if (profile.status !== 'approved') {
-      await signOut(auth)
-      const message = profile.status === 'pending'
-        ? '마스터 계정의 가입 승인을 기다리고 있습니다.'
-        : profile.status === 'expelled'
-          ? '관리자에 의해 탈퇴 처리된 계정입니다.'
-          : '승인되지 않은 계정입니다.'
-      const error = new Error(message) as Error & { code: string }
-      error.code = profile.status === 'pending'
-        ? 'auth/pending-approval'
-        : profile.status === 'expelled'
-          ? 'auth/account-expelled'
-          : 'auth/not-approved'
-      throw error
-    }
-
-    authUser.value = credential.user
-    userProfile.value = profile
-    return credential
   }
 
   const register = async (userId: string, password: string, name: string) => {
@@ -198,6 +261,8 @@ export const useAuth = () => {
     isAdmin,
     isTeacher,
     waitForAuthReady,
+    waitForApprovedSession,
+    runWithAuthRetry,
     login,
     register,
     logout,

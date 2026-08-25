@@ -39,7 +39,7 @@ import { doc, getDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const { language } = useLanguage()
-const { isAdmin } = useAuth()
+const { isAdmin, runWithAuthRetry } = useAuth()
 const { $firebaseDb } = useNuxtApp()
 const { getImage, resolveRichTextImages } = useFirestoreImages()
 const defaultImage = '/images/sermon-default-v1.png'
@@ -71,7 +71,7 @@ const embedUrl = (url: string) => {
 onMounted(async () => {
   if (!$firebaseDb) { isLoading.value = false; return }
   try {
-    const snapshot = await getDoc(doc($firebaseDb, 'sermons', String(route.params.id)))
+    const snapshot = await runWithAuthRetry(() => getDoc(doc($firebaseDb, 'sermons', String(route.params.id))))
       if (!snapshot.exists()) return
       sermon.value = { id: snapshot.id, ...snapshot.data() }
       if (sermon.value.isHidden === true && !isAdmin.value) {

@@ -140,7 +140,7 @@ import { ref, onMounted } from 'vue'
 import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore'
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 
-const { isMaster, userName, user: currentUser } = useAuth()
+const { isMaster, userName, user: currentUser, runWithAuthRetry } = useAuth()
 const { $firebaseDb, $firebaseStorage } = useNuxtApp()
 
 const currentUid = computed(() => currentUser.value?.uid || '')
@@ -162,7 +162,7 @@ const newPost = ref({
 const fetchPosts = async () => {
   try {
     const q = query(collection($firebaseDb, 'teachers_posts'), orderBy('createdAt', 'desc'))
-    const snap = await getDocs(q)
+    const snap = await runWithAuthRetry(() => getDocs(q))
     const list: any[] = []
     snap.forEach((d) => {
       list.push({

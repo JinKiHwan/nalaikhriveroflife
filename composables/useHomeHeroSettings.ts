@@ -20,7 +20,7 @@ const copyDefaults = () => ({ ...DEFAULT_HOME_HERO })
 
 export const useHomeHeroSettings = () => {
   const { $firebaseDb } = useNuxtApp()
-  const { user } = useAuth()
+  const { user, runWithAuthRetry } = useAuth()
   const db = $firebaseDb as Firestore | null
   const heroSettings = useState<HomeHeroSettings>('home-hero-settings', copyDefaults)
   const isLoaded = useState('home-hero-settings-loaded', () => false)
@@ -35,7 +35,7 @@ export const useHomeHeroSettings = () => {
 
   const loadHeroSettings = async (force = false) => {
     if (!db || (isLoaded.value && !force)) return heroSettings.value
-    const snapshot = await getDoc(doc(db, 'settings', 'home_hero'))
+    const snapshot = await runWithAuthRetry(() => getDoc(doc(db, 'settings', 'home_hero')))
     heroSettings.value = snapshot.exists() ? normalize(snapshot.data()) : copyDefaults()
     isLoaded.value = true
     return heroSettings.value

@@ -16,7 +16,7 @@ const copyDefaults = () => DEFAULT_SERMON_CATEGORIES.map(item => ({ ...item }))
 
 export const useSermonCategories = () => {
   const { $firebaseDb } = useNuxtApp()
-  const { user } = useAuth()
+  const { user, runWithAuthRetry } = useAuth()
   const db = $firebaseDb as Firestore | null
   const categories = useState<SermonCategory[]>('sermon-categories', copyDefaults)
   const isLoaded = useState('sermon-categories-loaded', () => false)
@@ -34,7 +34,7 @@ export const useSermonCategories = () => {
 
   const loadCategories = async (force = false) => {
     if (!db || (isLoaded.value && !force)) return categories.value
-    const snapshot = await getDoc(doc(db, 'settings', 'sermon_categories'))
+    const snapshot = await runWithAuthRetry(() => getDoc(doc(db, 'settings', 'sermon_categories')))
     const saved = snapshot.exists() ? normalize(snapshot.data().items) : []
     categories.value = saved.length ? saved : copyDefaults()
     isLoaded.value = true

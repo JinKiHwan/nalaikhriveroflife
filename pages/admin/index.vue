@@ -86,7 +86,7 @@ import type { UserRole } from '~/composables/useAuth'
 
 definePageMeta({ layout: 'admin' })
 
-const { user, isMaster, userRole } = useAuth()
+const { user, isMaster, userRole, runWithAuthRetry } = useAuth()
 const { language, t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 const users = ref<any[]>([])
@@ -112,7 +112,7 @@ const fetchUsers = async () => {
   isLoading.value = true
   actionError.value = ''
   try {
-    const snapshot = await getDocs(query(collection($firebaseDb, 'users'), orderBy('createdAt', 'desc')))
+    const snapshot = await runWithAuthRetry(() => getDocs(query(collection($firebaseDb, 'users'), orderBy('createdAt', 'desc'))))
     users.value = snapshot.docs.map(item => ({ uid: item.id, ...item.data() }))
   } catch (error: any) {
     actionError.value = error.message || '회원 정보를 불러오지 못했습니다.'

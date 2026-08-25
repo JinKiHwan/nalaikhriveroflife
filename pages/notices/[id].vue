@@ -45,7 +45,7 @@ import { doc, getDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const { language } = useLanguage()
-const { isAdmin } = useAuth()
+const { isAdmin, runWithAuthRetry } = useAuth()
 const { $firebaseDb } = useNuxtApp()
 const { resolveRichTextImages } = useFirestoreImages()
 
@@ -69,7 +69,7 @@ const fetchNoticeDetails = async () => {
   const noticeId = route.params.id as string
   try {
     const docRef = doc($firebaseDb, 'notices', noticeId)
-    const snap = await getDoc(docRef)
+    const snap = await runWithAuthRetry(() => getDoc(docRef))
       if (snap.exists()) {
         notice.value = { id: snap.id, ...snap.data() }
         if (notice.value.isHidden === true && !isAdmin.value) {

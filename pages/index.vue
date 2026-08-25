@@ -122,6 +122,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { richTextExcerpt } from '~/utils/richText'
 
 const { language, t } = useLanguage()
+const { runWithAuthRetry } = useAuth()
 const { $firebaseDb } = useNuxtApp()
 const { getImage } = useFirestoreImages()
 const { heroSettings, loadHeroSettings } = useHomeHeroSettings()
@@ -234,12 +235,12 @@ const withImage = async (collectionName: string, item: any, fallback = '') => ({
 const fetchHomepageContent = async () => {
   if (!$firebaseDb) return
   try {
-    const [newsSnapshot, sermonSnapshot, noticeSnapshot, eventSnapshot] = await Promise.all([
+    const [newsSnapshot, sermonSnapshot, noticeSnapshot, eventSnapshot] = await runWithAuthRetry(() => Promise.all([
       getDocs(collection($firebaseDb, 'church_news')),
       getDocs(collection($firebaseDb, 'sermons')),
       getDocs(collection($firebaseDb, 'notices')),
       getDocs(collection($firebaseDb, 'church_events')),
-    ])
+    ]))
     const visible = (snapshot: any) => snapshot.docs
       .map((item: any) => ({ id: item.id, ...item.data() }))
       .filter((item: any) => item.isHidden !== true)

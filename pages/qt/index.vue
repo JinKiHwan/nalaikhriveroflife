@@ -166,7 +166,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy } from 'firebase/firestore'
 
-const { isMaster, userName, user: currentUser } = useAuth()
+const { isMaster, userName, user: currentUser, runWithAuthRetry } = useAuth()
 const { t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 
@@ -219,7 +219,7 @@ const fetchQT = async () => {
   try {
     // 1. Fetch QT for selected date
     const qtDocRef = doc($firebaseDb, 'qt', selectedDate.value)
-    const snap = await getDoc(qtDocRef)
+    const snap = await runWithAuthRetry(() => getDoc(qtDocRef))
     
     if (snap.exists()) {
       qtData.value = snap.data()
@@ -237,7 +237,7 @@ const fetchComments = async () => {
   try {
     const commentsColRef = collection($firebaseDb, 'qt', selectedDate.value, 'comments')
     const q = query(commentsColRef, orderBy('createdAt', 'desc'))
-    const snap = await getDocs(q)
+    const snap = await runWithAuthRetry(() => getDocs(q))
     const list: any[] = []
     snap.forEach((d) => {
       list.push({

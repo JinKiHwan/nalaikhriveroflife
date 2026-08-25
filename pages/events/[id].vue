@@ -13,13 +13,13 @@
 <script setup lang="ts">
 import { doc, getDoc } from 'firebase/firestore'
 const route = useRoute()
-const { isAdmin } = useAuth()
+const { isAdmin, runWithAuthRetry } = useAuth()
 const { $firebaseDb } = useNuxtApp()
 const defaultImage = '/images/bg_05.webp'
 const post = ref<any>(null)
 const formatDate = (value:string) => value ? value.slice(0,10).replaceAll('-', '. ') : ''
 const useDefaultImage = (event:Event) => { (event.currentTarget as HTMLImageElement).src = defaultImage }
-onMounted(async()=>{ if($firebaseDb){ const snapshot=await getDoc(doc($firebaseDb,'church_events',String(route.params.id))); if(snapshot.exists()) { post.value={id:snapshot.id,...snapshot.data()}; if(post.value.isHidden === true && !isAdmin.value) await navigateTo('/events', { replace: true }) } } })
+onMounted(async()=>{ if($firebaseDb){ const snapshot=await runWithAuthRetry(() => getDoc(doc($firebaseDb,'church_events',String(route.params.id)))); if(snapshot.exists()) { post.value={id:snapshot.id,...snapshot.data()}; if(post.value.isHidden === true && !isAdmin.value) await navigateTo('/events', { replace: true }) } } })
 </script>
 
 <style lang="scss" scoped>

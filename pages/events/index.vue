@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore'
 
-const { isMaster, user, userName } = useAuth()
+const { isMaster, user, userName, runWithAuthRetry } = useAuth()
 const route = useRoute()
 const { $firebaseDb } = useNuxtApp()
 const defaultImage = '/images/bg_05.webp'
@@ -58,7 +58,7 @@ const { currentPage, totalPages, pagedItems: pagedPosts, resetPage } = useClient
 
 const fetchPosts = async () => {
   if (!$firebaseDb) return
-  const snapshot = await getDocs(query(collection($firebaseDb, 'church_events'), orderBy('date', 'desc')))
+  const snapshot = await runWithAuthRetry(() => getDocs(query(collection($firebaseDb, 'church_events'), orderBy('date', 'desc'))))
   posts.value = snapshot.docs.map(item => ({ id: item.id, ...item.data() })).filter((post: any) => post.isHidden !== true)
   openRequestedEdit()
 }

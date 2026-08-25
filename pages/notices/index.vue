@@ -88,7 +88,7 @@
 import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy, updateDoc } from 'firebase/firestore'
 import { prepareRichTextForSave, richTextExcerpt, richTextImageIds } from '~/utils/richText'
 
-const { isMaster, user, userName } = useAuth()
+const { isMaster, user, userName, runWithAuthRetry } = useAuth()
 const { language, t } = useLanguage()
 const route = useRoute()
 const { $firebaseDb } = useNuxtApp()
@@ -110,7 +110,7 @@ const newNotice = ref(emptyNotice())
 const fetchNotices = async () => {
   try {
     const q = query(collection($firebaseDb, 'notices'), orderBy('createdAt', 'desc'))
-    const snap = await getDocs(q)
+    const snap = await runWithAuthRetry(() => getDocs(q))
     const list: any[] = []
     snap.forEach((d) => {
       list.push({

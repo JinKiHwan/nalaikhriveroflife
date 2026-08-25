@@ -76,6 +76,7 @@ import { doc, getDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const { $firebaseDb } = useNuxtApp()
+const { runWithAuthRetry } = useAuth()
 
 const post = ref<any>(null)
 const isLoading = ref(true)
@@ -85,7 +86,7 @@ const fetchPostDetails = async () => {
   const postId = route.params.id as string
   try {
     const docRef = doc($firebaseDb, 'teachers_posts', postId)
-    const snap = await getDoc(docRef)
+    const snap = await runWithAuthRetry(() => getDoc(docRef))
     if (snap.exists()) {
       post.value = snap.data()
     }

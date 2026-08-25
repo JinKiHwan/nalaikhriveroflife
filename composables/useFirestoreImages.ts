@@ -85,7 +85,7 @@ const webpFileName = (fileName: string) => `${fileName.replace(/\.[^.]+$/, '') |
 
 export const useFirestoreImages = () => {
   const { $firebaseDb } = useNuxtApp()
-  const { user } = useAuth()
+  const { user, runWithAuthRetry } = useAuth()
   const db = $firebaseDb as Firestore | null
 
   const uploadImage = async (file: File, folder: string, variant: 'thumbnail' | 'body' = 'body'): Promise<StoredImageResult> => {
@@ -109,7 +109,7 @@ export const useFirestoreImages = () => {
   const getImage = async (imageId: string) => {
     if (!imageId || !db) return ''
     if (imageCache.has(imageId)) return imageCache.get(imageId) || ''
-    const snapshot = await getDoc(doc(db, 'content_images', imageId))
+    const snapshot = await runWithAuthRetry(() => getDoc(doc(db, 'content_images', imageId)))
     if (!snapshot.exists()) return ''
     const dataUrl = String(snapshot.data().dataUrl || '')
     if (dataUrl) imageCache.set(imageId, dataUrl)

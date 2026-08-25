@@ -76,7 +76,7 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore'
 import { prepareRichTextForSave, richTextImageIds } from '~/utils/richText'
 
-const { isMaster, user, userName } = useAuth()
+const { isMaster, user, userName, runWithAuthRetry } = useAuth()
 const { language, t } = useLanguage()
 const route = useRoute()
 const { $firebaseDb } = useNuxtApp()
@@ -129,7 +129,7 @@ const selectCategoryFromForm = () => {
 
 const fetchSermons = async () => {
   if (!$firebaseDb) return
-  const snapshot = await getDocs(query(collection($firebaseDb, 'sermons'), orderBy('date', 'desc')))
+  const snapshot = await runWithAuthRetry(() => getDocs(query(collection($firebaseDb, 'sermons'), orderBy('date', 'desc'))))
   sermons.value = snapshot.docs.map(item => ({ id: item.id, ...item.data() })).filter((sermon: any) => sermon.isHidden !== true)
   openRequestedEdit()
 }

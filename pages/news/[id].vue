@@ -20,7 +20,7 @@ import { doc, getDoc } from 'firebase/firestore'
 
 const route = useRoute()
 const { language } = useLanguage()
-const { isAdmin } = useAuth()
+const { isAdmin, runWithAuthRetry } = useAuth()
 const { $firebaseDb } = useNuxtApp()
 const { getImage, resolveRichTextImages } = useFirestoreImages()
 const defaultImage = '/images/bg_04.webp'
@@ -43,7 +43,7 @@ const useDefaultImage = (event: Event) => { (event.currentTarget as HTMLImageEle
 
 onMounted(async () => {
   if (!$firebaseDb) return
-  const snapshot = await getDoc(doc($firebaseDb, 'church_news', String(route.params.id)))
+  const snapshot = await runWithAuthRetry(() => getDoc(doc($firebaseDb, 'church_news', String(route.params.id))))
   if (!snapshot.exists()) return
   post.value = { id: snapshot.id, ...snapshot.data() }
   if (post.value.isHidden === true && !isAdmin.value) {
