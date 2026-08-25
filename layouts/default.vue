@@ -1,115 +1,26 @@
 <template>
-  <div class="app-shell" :class="{ 'sidebar-collapsed': isCollapsed }">
-
-    <!-- ── 좌측 사이드바 ─────────────────────── -->
-    <aside class="sidebar" :class="{ 'sidebar-open': isMobileMenuOpen, collapsed: isCollapsed }">
-      <!-- 상단 로고 -->
-      <div class="sidebar-logo">
-        <div class="logo-mark">
-          <span class="logo-cross">✝</span>
-        </div>
-        <transition name="fade-text">
-          <div v-show="!isCollapsed" class="logo-text-wrap">
-            <span class="logo-name">{{ t('church.name') }}</span>
-            <span class="logo-sub">{{ t('church.region') }}</span>
-          </div>
-        </transition>
-      </div>
-
-      <!-- 상단 그라데이션 구분선 -->
-      <div class="sidebar-divider"></div>
-
-      <!-- 내비게이션 메뉴 -->
-      <nav class="sidebar-nav">
-        <nuxt-link
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          class="nav-item"
-          active-class="active"
-          :exact="item.exact"
-          @mouseenter="(e: MouseEvent) => showTooltip(e, item.label)"
-          @mouseleave="hideTooltip"
-        >
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path :d="item.icon" fill="currentColor"/></svg>
-          <span class="nav-label">{{ item.label }}</span>
+  <div class="app-shell" :class="{ 'home-mode': isHome, 'menu-open': isMobileMenuOpen, scrolled: isScrolled }">
+    <header class="site-header">
+      <div class="header-inner">
+        <nuxt-link to="/" class="brand" @click="closeMenu">
+          <span class="brand-mark" aria-hidden="true"><span>†</span></span>
+          <span class="brand-copy">
+            <strong>{{ t('church.name') }}</strong>
+            <small>{{ t('church.region') }} · RIVER OF LIFE</small>
+          </span>
         </nuxt-link>
 
-        <!-- 교사 전용 -->
-        <nuxt-link
-          v-if="isTeacher"
-          to="/teachers-room"
-          class="nav-item"
-          active-class="active"
-          @mouseenter="(e: MouseEvent) => showTooltip(e, t('nav.teachers'))"
-          @mouseleave="hideTooltip"
-        >
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="currentColor"/></svg>
-          <span class="nav-label">{{ t('nav.teachers') }}</span>
-        </nuxt-link>
+        <nav class="desktop-nav" :aria-label="t('nav.home')">
+          <nuxt-link
+            v-for="item in visibleNavItems"
+            :key="item.to"
+            :to="item.to"
+            :exact="item.exact"
+            active-class="active"
+          >{{ item.label }}</nuxt-link>
+        </nav>
 
-        <!-- 관리자 전용 -->
-        <nuxt-link
-          v-if="isMaster"
-          to="/admin"
-          class="nav-item"
-          active-class="active"
-          @mouseenter="(e: MouseEvent) => showTooltip(e, t('nav.admin'))"
-          @mouseleave="hideTooltip"
-        >
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>
-          <span class="nav-label">{{ t('nav.admin') }}</span>
-        </nuxt-link>
-      </nav>
-
-      <!-- 사이드바 접기/펼치기 버튼 -->
-      <button class="collapse-toggle" @click="toggleCollapse" :title="isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')">
-        <svg class="collapse-icon" :class="{ rotated: isCollapsed }" viewBox="0 0 24 24" fill="none">
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor"/>
-        </svg>
-      </button>
-
-      <!-- 하단 사용자 정보 -->
-      <div class="sidebar-footer">
-        <div class="user-card">
-          <div
-            class="user-avatar"
-            @mouseenter="(e: MouseEvent) => showTooltip(e, `${userName} · ${roleLabel}`)"
-            @mouseleave="hideTooltip"
-          >
-            {{ userName.charAt(0) }}
-          </div>
-          <transition name="fade-text">
-            <div v-show="!isCollapsed" class="user-info">
-              <span class="user-name">{{ userName }}</span>
-              <span :class="['badge', `badge-${userRole}`]">{{ roleLabel }}</span>
-            </div>
-          </transition>
-          <transition name="fade-text">
-            <button v-show="!isCollapsed" @click="handleLogout" class="logout-btn" :title="t('auth.logout')">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" fill="currentColor"/></svg>
-            </button>
-          </transition>
-        </div>
-      </div>
-    </aside>
-
-    <!-- 모바일 오버레이 -->
-    <div v-if="isMobileMenuOpen" class="mobile-overlay" @click="isMobileMenuOpen = false"></div>
-
-    <!-- ── 우측 메인 영역 ──────────────────────── -->
-    <div class="main-area" :style="pageBackgroundStyle">
-
-      <!-- 상단 헤더 -->
-      <header class="topbar">
-        <!-- 모바일: 햄버거 메뉴 -->
-        <button class="hamburger-btn mobile-only" @click="isMobileMenuOpen = !isMobileMenuOpen">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" fill="currentColor"/></svg>
-        </button>
-        <span class="topbar-title mobile-only">{{ t('church.fullName') }}</span>
-
-        <!-- 우측: 언어 선택 -->
-        <div class="topbar-right">
+        <div class="header-tools">
           <label class="language-selector">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.92 6h-3.03a15.7 15.7 0 00-1.38-3.56A8.04 8.04 0 0118.92 8zM12 4c.83 1.2 1.47 2.53 1.82 4h-3.64A13.6 13.6 0 0112 4zM4.26 14a8.2 8.2 0 010-4h3.39a16.4 16.4 0 000 4H4.26zm.82 2h3.03c.3 1.27.77 2.47 1.38 3.56A8.04 8.04 0 015.08 16zM8.11 8H5.08a8.04 8.04 0 014.41-3.56A15.7 15.7 0 008.11 8zM12 20a13.6 13.6 0 01-1.82-4h3.64A13.6 13.6 0 0112 20zm2.22-6H9.78a14.4 14.4 0 010-4h4.44a14.4 14.4 0 010 4zm.29 5.56A15.7 15.7 0 0015.89 16h3.03a8.04 8.04 0 01-4.41 3.56zM16.35 14a16.4 16.4 0 000-4h3.39a8.2 8.2 0 010 4h-3.39z" fill="currentColor"/>
@@ -122,119 +33,114 @@
               <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </label>
+
+          <button class="menu-toggle" :aria-expanded="isMobileMenuOpen" :aria-label="isMobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'" @click="isMobileMenuOpen = !isMobileMenuOpen">
+            <span></span><span></span><span></span>
+          </button>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <!-- 콘텐츠 -->
-      <main class="content-area">
-        <slot />
-      </main>
-    </div>
+    <transition name="menu-drop">
+      <div v-if="isMobileMenuOpen" class="mobile-menu">
+        <nav class="mobile-nav" :aria-label="t('nav.home')">
+          <nuxt-link
+            v-for="(item, index) in visibleNavItems"
+            :key="item.to"
+            :to="item.to"
+            :exact="item.exact"
+            active-class="active"
+            @click="closeMenu"
+          >
+            <span>{{ String(index + 1).padStart(2, '0') }}</span>
+            <strong>{{ item.label }}</strong>
+            <i>↗</i>
+          </nuxt-link>
+        </nav>
+        <button class="mobile-logout" @click="handleLogout">{{ t('auth.logout') }}</button>
+      </div>
+    </transition>
 
-    <!-- ── 말풍선 (Teleport → body) ──────────── -->
-    <Teleport to="body">
-      <transition name="tooltip-fade">
-        <div
-          v-if="tooltip.visible"
-          class="sidebar-tooltip"
-          :style="{ top: tooltip.top + 'px', left: tooltip.left + 'px' }"
-        >
-          {{ tooltip.text }}
-        </div>
-      </transition>
-    </Teleport>
+    <main class="site-main" :style="pageBackgroundStyle">
+      <slot />
+    </main>
 
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <nuxt-link to="/" class="footer-brand">
+          <span class="brand-mark" aria-hidden="true"><span>†</span></span>
+          <span><strong>{{ t('church.fullName') }}</strong><small>NALAIKH · MONGOLIA</small></span>
+        </nuxt-link>
+        <nav class="footer-nav">
+          <nuxt-link v-for="item in visibleNavItems.slice(0, 5)" :key="item.to" :to="item.to">{{ item.label }}</nuxt-link>
+          <button @click="handleLogout">{{ t('auth.logout') }}</button>
+        </nav>
+        <p>© {{ currentYear }} RIVER OF LIFE CHURCH. ALL RIGHTS RESERVED.</p>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-const { userRole, userName, isTeacher, isMaster, logout } = useAuth()
+const { isTeacher, isMaster, logout } = useAuth()
 const { language: selectedLanguage, t } = useLanguage()
 const route = useRoute()
 const isMobileMenuOpen = ref(false)
-const isCollapsed = ref(false)
+const isScrolled = ref(false)
+const currentYear = new Date().getFullYear()
+
+const isHome = computed(() => route.path === '/')
+
+const visibleNavItems = computed(() => {
+  const items = [
+    { to: '/', label: t('nav.home'), exact: true },
+    { to: '/sermons', label: t('nav.sermons') },
+    { to: '/notices', label: t('nav.notices') },
+    { to: '/qt', label: t('nav.qt') },
+    { to: '/events', label: t('nav.events') },
+  ]
+
+  if (isTeacher.value) items.push({ to: '/teachers-room', label: t('nav.teachers') })
+  if (isMaster.value) items.push({ to: '/admin', label: t('nav.admin') })
+  return items
+})
 
 const pageBackgroundStyle = computed<Record<string, string>>(() => {
   const path = route.path
   let image = '/images/bg_03.webp'
-
   if (path.startsWith('/sermons')) image = '/images/bg_01.webp'
   else if (path.startsWith('/notices')) image = '/images/bg_02.webp'
   else if (path.startsWith('/qt')) image = '/images/bg_04.webp'
   else if (path.startsWith('/events')) image = '/images/bg_05.webp'
   else if (path.startsWith('/teachers-room')) image = '/images/bg_06.webp'
   else if (path.startsWith('/admin')) image = '/images/bg_07.webp'
-
   return { '--page-bg-image': `url('${image}')` }
 })
 
-// 네비게이션 아이템
-const navItems = computed(() => [
-  { to: '/', label: t('nav.home'), icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z', exact: true },
-  { to: '/sermons', label: t('nav.sermons'), icon: 'M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z' },
-  { to: '/notices', label: t('nav.notices'), icon: 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z' },
-  { to: '/qt', label: t('nav.qt'), icon: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' },
-  { to: '/events', label: t('nav.events'), icon: 'M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V9h14v10zM7 11h5v5H7z' },
-])
+const closeMenu = () => { isMobileMenuOpen.value = false }
+const updateScrollState = () => { isScrolled.value = window.scrollY > 32 }
 
-// ── 말풍선 (position: fixed, body에 렌더) ──────
-const tooltip = reactive({
-  visible: false,
-  text: '',
-  top: 0,
-  left: 0,
+watch(() => route.fullPath, () => {
+  closeMenu()
+  if (import.meta.client) requestAnimationFrame(updateScrollState)
 })
 
-let tooltipTimer: ReturnType<typeof setTimeout> | null = null
-
-const showTooltip = (e: MouseEvent, text: string) => {
-  if (!isCollapsed.value) return
-  if (tooltipTimer) clearTimeout(tooltipTimer)
-
-  const target = (e.currentTarget as HTMLElement)
-  const rect = target.getBoundingClientRect()
-
-  tooltip.text = text
-  tooltip.top = rect.top + rect.height / 2
-  tooltip.left = rect.right + 12
-  tooltip.visible = true
-}
-
-const hideTooltip = () => {
-  tooltipTimer = setTimeout(() => {
-    tooltip.visible = false
-  }, 80)
-}
-
-// localStorage에서 사이드바 상태 복원
 onMounted(() => {
-  if (process.client) {
-    const saved = localStorage.getItem('sidebar-collapsed')
-    if (saved === 'true') isCollapsed.value = true
-
-  }
+  updateScrollState()
+  window.addEventListener('scroll', updateScrollState, { passive: true })
 })
 
-const toggleCollapse = () => {
-  isCollapsed.value = !isCollapsed.value
-  tooltip.visible = false
-  if (process.client) {
-    localStorage.setItem('sidebar-collapsed', String(isCollapsed.value))
-  }
-}
-
-const roleLabel = computed(() => {
-  if (userRole.value === 'master') return t('role.master')
-  if (userRole.value === 'teacher') return t('role.teacher')
-  return t('role.normal')
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateScrollState)
 })
 
 const handleLogout = async () => {
   try {
     await logout()
-    navigateTo('/login')
+    closeMenu()
+    await navigateTo('/login')
   } catch (err) {
     console.error('Logout error:', err)
   }
@@ -242,525 +148,151 @@ const handleLogout = async () => {
 </script>
 
 <style lang="scss" scoped>
-// ── 트랜지션 ──────────────────────────────────
-.fade-text-enter-active,
-.fade-text-leave-active {
-  transition: opacity 0.2s ease;
+.app-shell { min-width: 0; min-height: 100vh; display: flex; flex-direction: column; background: $bg-main; }
+
+.site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 76px;
+  color: #16253a; background: rgba(#fff, .97);
+  border-bottom: 1px solid rgba(#17263b, .1); box-shadow: 0 5px 22px rgba(#13283a, .055); backdrop-filter: blur(14px);
 }
-.fade-text-enter-from,
-.fade-text-leave-to {
-  opacity: 0;
-}
-
-// ── 전체 쉘 ───────────────────────────────────
-.app-shell {
-  display: flex;
-  min-height: 100vh;
-  background: $bg-main;
-}
-
-// ── 사이드바 ────────────────────────────────────
-.sidebar {
-  width: $sidebar-width;
-  min-height: 100vh;
-  background: $bg-sidebar;
-  border-right: 1px solid $border-color;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 100;
-  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden; // 텍스트 클리핑 — 말풍선은 Teleport로 body에 렌더
-
-  &.collapsed {
-    width: $sidebar-collapsed;
-  }
-
-  @media (max-width: 768px) {
-    width: $sidebar-width !important;
-    transform: translateX(-100%);
-    box-shadow: $shadow-sidebar;
-    &.sidebar-open { transform: translateX(0); }
-  }
-}
-
-// 로고
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 16px 18px;
-  min-height: 72px;
-  // collapsed 시에도 padding 동일 → 로고마크 위치 고정 (overflow: hidden이 텍스트를 자름)
-}
-
-.logo-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: $radius-sm;
-  background: $gradient-mn;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba($mn-red, 0.3);
-}
-
-.logo-cross {
+.home-mode .site-header {
   color: #fff;
-  font-size: 1rem;
-  line-height: 1;
+  background: linear-gradient(180deg, rgba(#071524, .55), transparent);
+  border-bottom-color: rgba(#fff, .2); box-shadow: none; backdrop-filter: none;
 }
-
-.logo-text-wrap {
-  display: flex;
-  flex-direction: column;
-  white-space: nowrap;
-  overflow: hidden;
+.home-mode.scrolled .site-header {
+  color: #16253a; background: rgba(#fff, .96); border-bottom-color: rgba(#17263b, .1);
+  box-shadow: 0 5px 22px rgba(#13283a, .075); backdrop-filter: blur(14px);
 }
+.home-mode.scrolled .brand-copy small { color: #8390a1; }
+.home-mode.scrolled .language-selector { color: #58677b; background: rgba(#fff, .88); border-color: rgba(#192b43, .12); }
+.home-mode.scrolled .language-selector > svg:first-child { color: $mn-blue; }
+.home-mode.menu-open .site-header { color: #fff; background: #102f36; border-bottom-color: rgba(#fff, .14); box-shadow: none; }
+.home-mode.menu-open .brand-copy small { color: rgba(#fff, .65); }
+.home-mode.menu-open .language-selector { color: #fff; background: rgba(#071524, .18); border-color: rgba(#fff, .35); }
+.home-mode.menu-open .language-selector > svg:first-child { color: #fff; }
 
-.logo-name {
-  font-family: $font-title;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: $text-primary;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+.header-inner {
+  width: min(1400px, calc(100% - 48px)); height: 100%; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  align-items: center; gap: 28px;
 }
-
-.logo-sub {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: $text-muted;
+.brand { width: fit-content; display: inline-flex; align-items: center; gap: 11px; color: inherit; }
+.brand:hover { color: inherit; }
+.brand-mark {
+  width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center;
+  color: #fff; background: $gradient-mn;
+  border-radius: 50%; box-shadow: 0 6px 18px rgba(#09192d, .2);
 }
+.brand-mark span { font-family: Georgia, serif; font-size: 1.28rem; line-height: 1; transform: translateY(-1px); }
+.brand-copy { display: flex; flex-direction: column; min-width: 0; }
+.brand-copy strong { font-family: $font-title; font-size: .93rem; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; }
+.brand-copy small { margin-top: 2px; color: #8390a1; font-size: .56rem; font-weight: 700; letter-spacing: .1em; }
+.home-mode .brand-copy small { color: rgba(#fff, .65); }
 
-// 상단 구분선 (몽골 그라데이션)
-.sidebar-divider {
-  height: 3px;
-  background: $gradient-mn-h;
-  margin: 0 16px 16px;
-  border-radius: $radius-full;
-
-  .collapsed & {
-    margin: 0 12px 16px;
-  }
+.desktop-nav { display: flex; align-items: center; justify-content: center; gap: clamp(22px, 2.7vw, 46px); white-space: nowrap; }
+.desktop-nav a { position: relative; padding: 28px 0 24px; color: inherit; font-size: .84rem; font-weight: 700; }
+.desktop-nav a::after {
+  content: ''; position: absolute; left: 50%; right: 50%; bottom: 16px; height: 2px;
+  background: $mn-blue; transition: left .22s ease, right .22s ease;
 }
+.desktop-nav a:hover, .desktop-nav a.active { color: inherit; }
+.desktop-nav a:hover::after, .desktop-nav a.active::after { left: 0; right: 0; }
 
-// 내비게이션
-.sidebar-nav {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 10px;
-  overflow-y: auto;
-  overflow-x: hidden;
-
-  .collapsed & {
-    padding: 0 8px;
-    align-items: center;
-  }
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: $radius-sm;
-  color: $text-secondary;
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.15s ease;
-  cursor: pointer;
-  white-space: nowrap;
-  position: relative;
-
-  .nav-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    transition: all 0.15s ease;
-  }
-
-  .nav-label {
-    transition: opacity 0.2s ease, width 0.2s ease;
-    overflow: hidden;
-  }
-
-  .collapsed & {
-    padding: 10px;
-    justify-content: center;
-    width: 44px;
-
-    .nav-label {
-      opacity: 0;
-      width: 0;
-      overflow: hidden;
-      position: absolute;
-      pointer-events: none;
-    }
-  }
-
-  &:hover {
-    background: $bg-hover;
-    color: $mn-blue;
-
-    .nav-icon { color: $mn-blue; }
-  }
-
-  &.active {
-    background: linear-gradient(90deg, rgba($mn-blue, 0.1) 0%, rgba($mn-red, 0.06) 100%);
-    color: $mn-blue;
-    font-weight: 700;
-
-    .nav-icon { color: $mn-blue; }
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 20%;
-      bottom: 20%;
-      width: 3px;
-      background: $gradient-mn;
-      border-radius: 0 $radius-full $radius-full 0;
-    }
-  }
-}
-
-// ── 사이드바 접기/펼치기 버튼 ─────────────────
-.collapse-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 4px 10px 8px;
-  padding: 6px;
-  border: 1px solid $border-color;
-  border-radius: $radius-sm;
-  background: $bg-main;
-  cursor: pointer;
-  color: $text-muted;
-  transition: all 0.18s ease;
-
-  .collapsed & {
-    margin: 4px 8px 8px;
-  }
-
-  &:hover {
-    background: $bg-hover;
-    color: $mn-blue;
-    border-color: rgba($mn-blue, 0.3);
-  }
-
-  @media (max-width: 768px) {
-    display: none;
-  }
-}
-
-.collapse-icon {
-  width: 18px;
-  height: 18px;
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &.rotated {
-    transform: rotate(180deg);
-  }
-}
-
-// 하단 사용자 카드
-.sidebar-footer {
-  border-top: 1px solid $border-color;
-  padding: 14px 12px;
-
-  .collapsed & {
-    padding: 14px 8px;
-  }
-}
-
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  .collapsed & {
-    justify-content: center;
-  }
-}
-
-.user-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: $gradient-mn;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: $font-title;
-  font-weight: 800;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-  cursor: default;
-}
-
-.user-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.user-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: $text-primary;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.logout-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  color: $text-muted;
-  border-radius: $radius-sm;
-  display: flex;
-  align-items: center;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-
-  svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  &:hover {
-    background: rgba($danger, 0.08);
-    color: $danger;
-  }
-}
-
-// ── 모바일 오버레이 ──────────────────────────────
-.mobile-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 99;
-  backdrop-filter: blur(2px);
-}
-
-// ── 우측 메인 영역 ───────────────────────────────
-.main-area {
-  flex: 1;
-  min-width: 0;
-  margin-left: $sidebar-width;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-
-  // 모든 페이지에서 공유하는 풀와이드 배경
-  &::before {
-    content: '';
-    position: absolute;
-    top: $header-height;
-    left: 0;
-    right: 0;
-    height: 565px;
-    background:
-      linear-gradient(180deg, rgba(#f7faff, 0.7) 0%, rgba(#f5f6fa, 0.58) 58%, $bg-main 100%),
-      var(--page-bg-image) center top / cover no-repeat;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .sidebar-collapsed & {
-    margin-left: $sidebar-collapsed;
-  }
-
-  @media (max-width: 768px) {
-    margin-left: 0 !important;
-
-    &::before {
-      height: 480px;
-    }
-  }
-}
-
-// 상단 헤더
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: $header-height;
-  padding: 0 28px;
-  background: $bg-sidebar;
-  border-bottom: 1px solid $border-color;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
-
-.mobile-only {
-  display: none;
-  @media (max-width: 768px) {
-    display: flex;
-  }
-}
-
-.hamburger-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  color: $text-secondary;
-  align-items: center;
-
-  svg { width: 22px; height: 22px; }
-}
-
-.topbar-title {
-  font-family: $font-title;
-  font-size: 1rem;
-  font-weight: 800;
-  color: $text-primary;
-}
-
-.topbar-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
+.header-tools { justify-self: end; display: flex; align-items: center; gap: 12px; }
 .language-selector {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 126px;
-  height: 40px;
-  padding: 0 34px 0 12px;
-  color: $text-secondary;
-  background: #fff;
-  border: 1px solid $border-color;
-  border-radius: $radius-full;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-
-  > svg:first-child {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    color: $mn-blue;
-  }
-
-  &:hover {
-    background: $bg-hover;
-    border-color: rgba($mn-blue, 0.35);
-  }
-
-  &:focus-within {
-    border-color: $mn-blue;
-    box-shadow: 0 0 0 3px rgba($mn-blue, 0.1);
-  }
-
-  select {
-    width: 100%;
-    appearance: none;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: $text-primary;
-    cursor: pointer;
-    font-family: $font-body;
-    font-size: 0.84rem;
-    font-weight: 700;
-  }
-
-  .language-chevron {
-    position: absolute;
-    right: 12px;
-    width: 16px;
-    height: 16px;
-    pointer-events: none;
-  }
-
-  @media (max-width: 480px) {
-    min-width: 112px;
-    height: 36px;
-    padding-left: 10px;
-
-    > svg:first-child {
-      width: 16px;
-      height: 16px;
-    }
-  }
+  position: relative; min-width: 118px; height: 38px; display: flex; align-items: center; gap: 7px;
+  padding: 0 30px 0 11px; color: #58677b; background: rgba(#fff, .88);
+  border: 1px solid rgba(#192b43, .12); border-radius: 999px;
 }
-
-// 콘텐츠 영역의 배경은 풀와이드, 각 페이지 콘텐츠는 공통 1300px
-.content-area {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  z-index: 1;
-  width: 100%;
+.home-mode .language-selector { color: #fff; background: rgba(#071524, .18); border-color: rgba(#fff, .35); }
+.language-selector > svg:first-child { width: 16px; height: 16px; flex: 0 0 16px; color: $mn-blue; }
+.home-mode .language-selector > svg:first-child { color: #fff; }
+.language-selector select {
+  width: 100%; appearance: none; border: 0; outline: 0; background: transparent; color: inherit;
+  cursor: pointer; font-family: $font-body; font-size: .76rem; font-weight: 700;
 }
-</style>
+.language-selector option { color: #16253a; background: #fff; }
+.language-chevron { position: absolute; right: 10px; width: 14px; height: 14px; pointer-events: none; }
 
-<!-- 말풍선은 Teleport로 body에 렌더되므로 scoped 밖에서 스타일 지정 -->
-<style lang="scss">
-@use '../assets/scss/variables' as *;
+.menu-toggle { width: 38px; height: 38px; display: none; place-items: center; padding: 9px; color: inherit; background: transparent; border: 0; cursor: pointer; }
+.menu-toggle span { width: 20px; height: 1.5px; display: block; margin: 2px 0; background: currentColor; transition: transform .22s ease, opacity .22s ease; }
+.menu-open .menu-toggle span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+.menu-open .menu-toggle span:nth-child(2) { opacity: 0; }
+.menu-open .menu-toggle span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
 
-// ── 말풍선 (position: fixed, body 레벨) ─────────
-.sidebar-tooltip {
-  position: fixed;
-  transform: translateY(-50%);
-  background: #1f2937;
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: $radius-sm;
-  white-space: nowrap;
+.mobile-menu {
+  position: fixed; z-index: 90; inset: 76px 0 0; display: flex; flex-direction: column;
+  padding: 24px; color: #fff; background: #10253a; overflow-y: auto;
+}
+.mobile-nav { width: min(680px, 100%); margin: auto; border-top: 1px solid rgba(#fff, .25); }
+.mobile-nav a {
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  padding: 20px 4px; color: #fff; border-bottom: 1px solid rgba(#fff, .16);
+}
+.mobile-nav a span { color: #7994ad; font-size: .66rem; letter-spacing: .08em; }
+.mobile-nav a strong { font-size: 1.04rem; }
+.mobile-nav a i { color: #7994ad; font-style: normal; }
+.mobile-nav a.active strong { color: #62c2ff; }
+.mobile-logout {
+  width: min(680px, 100%); margin: 20px auto 0; padding: 12px 0; color: rgba(#fff, .62);
+  background: transparent; border: 0; text-align: left; cursor: pointer;
+}
+.menu-drop-enter-active, .menu-drop-leave-active { transition: opacity .2s ease, transform .2s ease; }
+.menu-drop-enter-from, .menu-drop-leave-to { opacity: 0; transform: translateY(-12px); }
+
+.site-main { position: relative; z-index: 1; flex: 1; min-width: 0; width: 100%; }
+.app-shell:not(.home-mode) .site-main { padding-top: 76px; }
+.app-shell:not(.home-mode) .site-main::before {
+  content: ''; position: absolute; z-index: -1; inset: 0 0 auto; height: 565px;
+  background: linear-gradient(180deg, rgba(#f7faff, .72) 0%, rgba(#f5f6fa, .6) 58%, $bg-main 100%), var(--page-bg-image) center top / cover no-repeat;
   pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
-  font-family: $font-body;
-
-  // 말풍선 화살표
-  &::before {
-    content: '';
-    position: absolute;
-    right: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    border: 5px solid transparent;
-    border-right-color: #1f2937;
-  }
 }
 
-// 말풍선 트랜지션
-.tooltip-fade-enter-active,
-.tooltip-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+.site-footer { color: rgba(#fff, .74); background: #073e3d; }
+.footer-inner {
+  width: min(1380px, calc(100% - 64px)); min-height: 148px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px 48px;
 }
-.tooltip-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-50%) translateX(-6px);
+.footer-brand { display: flex; align-items: center; gap: 12px; color: #fff; }
+.footer-brand:hover { color: #fff; }
+.footer-brand .brand-mark { width: 34px; height: 34px; flex-basis: 34px; }
+.footer-brand > span:last-child { display: flex; flex-direction: column; }
+.footer-brand strong { font-size: .9rem; }
+.footer-brand small { margin-top: 2px; color: rgba(#fff, .48); font-size: .58rem; letter-spacing: .12em; }
+.footer-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px 24px; }
+.footer-nav a { color: rgba(#fff, .72); font-size: .72rem; }
+.footer-nav a:hover { color: #fff; }
+.footer-nav button { padding: 0; color: rgba(#fff, .72); background: transparent; border: 0; cursor: pointer; font: inherit; font-size: .72rem; }
+.footer-nav button:hover { color: #fff; }
+.footer-inner p { grid-column: 1 / -1; align-self: start; padding-top: 16px; border-top: 1px solid rgba(#fff, .14); color: rgba(#fff, .4); font-size: .6rem; letter-spacing: .07em; }
+
+@media (max-width: 1100px) {
+  .header-inner { grid-template-columns: 1fr auto; }
+  .desktop-nav { display: none; }
+  .menu-toggle { display: block; }
 }
-.tooltip-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-50%) translateX(-6px);
+@media (max-width: 768px) {
+  .site-header { height: 64px; }
+  .header-inner { width: calc(100% - 28px); gap: 10px; }
+  .brand { gap: 8px; }
+  .brand-mark { width: 32px; height: 32px; flex-basis: 32px; }
+  .brand-copy strong { max-width: 145px; overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+  .brand-copy small { display: none; }
+  .language-selector { min-width: 106px; height: 34px; }
+  .mobile-menu { inset: 64px 0 0; }
+  .app-shell:not(.home-mode) .site-main { padding-top: 64px; }
+  .app-shell:not(.home-mode) .site-main::before { height: 480px; }
+  .footer-inner { width: calc(100% - 32px); padding: 34px 0; grid-template-columns: 1fr; }
+  .footer-nav { justify-content: flex-start; }
+}
+@media (max-width: 420px) {
+  .header-inner { width: calc(100% - 20px); }
+  .brand-copy strong { max-width: 122px; }
+  .language-selector { min-width: 92px; padding-left: 9px; }
+  .language-selector > svg:first-child { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
 }
 </style>

@@ -105,7 +105,7 @@
 
 .brand-verse {
   border-left: 3px solid;
-  border-image: $gradient-mn 1;
+  border-left-color: $mn-blue;
   padding-left: 16px;
 
   p {

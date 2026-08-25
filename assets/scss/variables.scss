@@ -1,15 +1,15 @@
 // ──────────────────────────────────────────────
 // 몽골 날라흐 생명수 교회 - 디자인 토큰
-// 베이스: 화이트 / 포인트: 몽골 국기 그라데이션
+// 베이스: 화이트 / 포인트: 생수의 강을 닮은 리버 틸과 샌드 골드
 // ──────────────────────────────────────────────
 
-// 몽골 국기 포인트 컬러
-$mn-red:  #e0334a;
-$mn-blue: #1a85d6;
+// 기존 변수명은 호환을 위해 유지하되 색상은 새 브랜드 팔레트로 교체
+$mn-red:  #b97836;
+$mn-blue: #0f766e;
 
 // Gradient definitions
-$gradient-mn: linear-gradient(135deg, $mn-red 0%, $mn-blue 50%, $mn-red 100%);
-$gradient-mn-h: linear-gradient(90deg, $mn-red 0%, $mn-blue 50%, $mn-red 100%);
+$gradient-mn: #0f766e;
+$gradient-mn-h: #0f766e;
 
 // Background & Surface
 $bg-main:    #f5f6fa;
@@ -35,7 +35,7 @@ $warning: #f59e0b;
 // Sidebar dimensions
 $sidebar-width: 220px;
 $sidebar-collapsed: 68px;
-$header-height: 64px;
+$header-height: 76px;
 
 // Radii
 $radius-sm:  6px;
