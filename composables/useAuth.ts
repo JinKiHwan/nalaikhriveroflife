@@ -1,148 +1,206 @@
-import { ref, computed } from 'vue'
-import { 
-  signInWithEmailAndPassword, 
-  signOut, 
+import { computed, ref } from 'vue'
+import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  type User
+  signInWithEmailAndPassword,
+  signOut,
+  type Auth,
+  type User,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { initializeApp, deleteApp } from 'firebase/app'
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore'
+
+export type UserRole = 'master' | 'vice_master' | 'teacher' | 'normal'
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expelled'
 
 export interface UserProfile {
+  userId: string
   email: string
   name: string
-  role: 'master' | 'teacher' | 'normal'
+  role: UserRole
+  status: ApprovalStatus
   createdAt: string
+  approvedAt?: string | null
+  approvedBy?: string | null
 }
 
-// Module-level state to share across components and page navigations
 const authUser = ref<User | null>(null)
 const userProfile = ref<UserProfile | null>(null)
 const isProfileLoading = ref(true)
+const isAuthReady = ref(false)
+
+let authListenerStarted = false
+let authReadyPromise: Promise<void> | null = null
+let resolveAuthReady: (() => void) | null = null
+
+const normalizeIdentifier = (identifier: string) => identifier.trim().toLowerCase()
+
+const identifierToEmail = (identifier: string) => {
+  const normalized = normalizeIdentifier(identifier)
+  return normalized.includes('@') ? normalized : `${normalized}@nalakh.local`
+}
+
+const emailToIdentifier = (email: string) => email.endsWith('@nalakh.local') ? email.replace('@nalakh.local', '') : email
+
+const normalizeProfile = (data: Partial<UserProfile>, fallbackEmail: string): UserProfile => ({
+  userId: data.userId || emailToIdentifier(data.email || fallbackEmail),
+  email: data.email || fallbackEmail,
+  name: data.name || '성도',
+  role: data.role || 'normal',
+  // Existing profiles created before the approval flow remain usable.
+  status: data.status || 'approved',
+  createdAt: data.createdAt || new Date().toISOString(),
+  approvedAt: data.approvedAt ?? null,
+  approvedBy: data.approvedBy ?? null,
+})
+
+const readProfile = async (db: Firestore, user: User) => {
+  const snapshot = await getDoc(doc(db, 'users', user.uid))
+  if (!snapshot.exists()) return null
+  return normalizeProfile(snapshot.data() as Partial<UserProfile>, user.email || '')
+}
 
 export const useAuth = () => {
   const { $firebaseAuth, $firebaseDb } = useNuxtApp()
+  const auth = $firebaseAuth as Auth | null
+  const db = $firebaseDb as Firestore | null
 
-  // Setup auth state listener if not already initialized
-  if (process.client && $firebaseAuth && $firebaseDb) {
-    onAuthStateChanged($firebaseAuth as any, async (user) => {
+  const startAuthListener = () => {
+    if (!import.meta.client || authListenerStarted) return
+
+    authListenerStarted = true
+    authReadyPromise = new Promise<void>((resolve) => {
+      resolveAuthReady = resolve
+    })
+
+    if (!auth || !db) {
+      isProfileLoading.value = false
+      isAuthReady.value = true
+      resolveAuthReady?.()
+      resolveAuthReady = null
+      return
+    }
+
+    onAuthStateChanged(auth, async (user) => {
       authUser.value = user
-      if (user) {
-        isProfileLoading.value = true
-        try {
-          const docRef = doc($firebaseDb as any, 'users', user.uid)
-          const docSnap = await getDoc(docRef)
-          if (docSnap.exists()) {
-            userProfile.value = docSnap.data() as UserProfile
-          } else {
-            // Fallback for bootstrap / missing Firestore profile
-            userProfile.value = {
-              email: user.email || '',
-              name: 'No Name',
-              role: 'normal',
-              createdAt: new Date().toISOString()
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching user profile:', error)
-          userProfile.value = null
-        } finally {
-          isProfileLoading.value = false
-        }
-      } else {
+      isProfileLoading.value = true
+
+      try {
+        userProfile.value = user ? await readProfile(db, user) : null
+      } catch (error) {
+        console.error('Failed to load member profile:', error)
         userProfile.value = null
+      } finally {
         isProfileLoading.value = false
+        isAuthReady.value = true
+        resolveAuthReady?.()
+        resolveAuthReady = null
       }
     })
-  } else {
-    // If not client or not initialized
-    isProfileLoading.value = false
+  }
+
+  startAuthListener()
+
+  const waitForAuthReady = async () => {
+    startAuthListener()
+    if (authReadyPromise) await authReadyPromise
   }
 
   const isAuthenticated = computed(() => !!authUser.value)
-  const userRole = computed(() => userProfile.value?.role || 'normal')
+  const isApproved = computed(() => !!authUser.value && userProfile.value?.status === 'approved')
+  const userRole = computed<UserRole>(() => userProfile.value?.role || 'normal')
   const userName = computed(() => userProfile.value?.name || '성도')
   const userEmail = computed(() => authUser.value?.email || '')
-  const isMaster = computed(() => userRole.value === 'master')
-  const isTeacher = computed(() => userRole.value === 'teacher' || userRole.value === 'master')
+  const isMaster = computed(() => isApproved.value && userRole.value === 'master')
+  const isAdmin = computed(() => isApproved.value && (userRole.value === 'master' || userRole.value === 'vice_master'))
+  const isTeacher = computed(() => isApproved.value && (userRole.value === 'teacher' || userRole.value === 'vice_master' || userRole.value === 'master'))
 
-  const login = async (email: string, pass: string) => {
-    if (!$firebaseAuth) {
-      throw new Error('Firebase가 초기화되지 않았습니다. 로컬 환경 변수(.env) 설정을 확인해 주세요.')
+  const login = async (identifier: string, password: string) => {
+    if (!auth || !db) throw new Error('Firebase 연결 설정을 확인해 주세요.')
+
+    const credential = await signInWithEmailAndPassword(auth, identifierToEmail(identifier), password)
+    const profile = await readProfile(db, credential.user)
+
+    if (!profile) {
+      await signOut(auth)
+      const error = new Error('등록된 회원 정보가 없습니다.') as Error & { code: string }
+      error.code = 'auth/profile-not-found'
+      throw error
     }
-    return signInWithEmailAndPassword($firebaseAuth as any, email, pass)
+
+    if (profile.status !== 'approved') {
+      await signOut(auth)
+      const message = profile.status === 'pending'
+        ? '마스터 계정의 가입 승인을 기다리고 있습니다.'
+        : profile.status === 'expelled'
+          ? '관리자에 의해 탈퇴 처리된 계정입니다.'
+          : '승인되지 않은 계정입니다.'
+      const error = new Error(message) as Error & { code: string }
+      error.code = profile.status === 'pending'
+        ? 'auth/pending-approval'
+        : profile.status === 'expelled'
+          ? 'auth/account-expelled'
+          : 'auth/not-approved'
+      throw error
+    }
+
+    authUser.value = credential.user
+    userProfile.value = profile
+    return credential
+  }
+
+  const register = async (userId: string, password: string, name: string) => {
+    if (!auth || !db) throw new Error('Firebase 연결 설정을 확인해 주세요.')
+
+    const normalizedId = normalizeIdentifier(userId)
+    if (!/^[a-z0-9._-]{4,24}$/.test(normalizedId)) {
+      const error = new Error('아이디는 영문 소문자, 숫자, 점, 밑줄, 하이픈을 사용해 4~24자로 입력해 주세요.') as Error & { code: string }
+      error.code = 'auth/invalid-user-id'
+      throw error
+    }
+
+    const credential = await createUserWithEmailAndPassword(auth, identifierToEmail(normalizedId), password)
+    const now = new Date().toISOString()
+
+    try {
+      await setDoc(doc(db, 'users', credential.user.uid), {
+        userId: normalizedId,
+        email: credential.user.email || identifierToEmail(normalizedId),
+        name: name.trim(),
+        role: 'normal',
+        status: 'pending',
+        createdAt: now,
+        approvedAt: null,
+        approvedBy: null,
+      } satisfies UserProfile)
+    } finally {
+      await signOut(auth)
+    }
   }
 
   const logout = async () => {
-    if (!$firebaseAuth) return
-    return signOut($firebaseAuth as any)
-  }
-
-  // Master command to create other users without signing out of their admin session
-  const createMember = async (email: string, pass: string, name: string, role: 'master' | 'teacher' | 'normal') => {
-    if (!isMaster.value) {
-      throw new Error('Only Master administrators can create accounts.')
-    }
-
-    const config = useRuntimeConfig()
-    if (!config.public.firebaseApiKey || !config.public.firebaseProjectId) {
-      throw new Error('Firebase configuration keys are missing in Nuxt runtime config.')
-    }
-
-    const firebaseConfig = {
-      apiKey: config.public.firebaseApiKey,
-      authDomain: config.public.firebaseAuthDomain,
-      projectId: config.public.firebaseProjectId,
-      storageBucket: config.public.firebaseStorageBucket,
-      messagingSenderId: config.public.firebaseMessagingSenderId,
-      appId: config.public.firebaseAppId
-    }
-
-    // Initialize temporary app
-    const tempAppName = `tempApp_${Date.now()}`
-    const tempApp = initializeApp(firebaseConfig, tempAppName)
-    const tempAuth = getAuth(tempApp)
-
-    try {
-      // 1. Create Auth user
-      const userCredential = await createUserWithEmailAndPassword(tempAuth, email, pass)
-      const newUid = userCredential.user.uid
-
-      // 2. Write Profile in Firestore using the default app database
-      if (!$firebaseDb) {
-        throw new Error('Firestore connection is not active.')
-      }
-      const userDocRef = doc($firebaseDb as any, 'users', newUid)
-      const newProfile: UserProfile = {
-        email,
-        name,
-        role,
-        createdAt: new Date().toISOString()
-      }
-      await setDoc(userDocRef, newProfile)
-      return { success: true, uid: newUid }
-    } catch (error: any) {
-      console.error('Error in createMember composable:', error)
-      throw error
-    } finally {
-      // 3. Clean up the temporary App instance
-      await deleteApp(tempApp)
-    }
+    if (!auth) return
+    await signOut(auth)
+    authUser.value = null
+    userProfile.value = null
   }
 
   return {
     user: authUser,
     profile: userProfile,
+    isAuthReady,
     isProfileLoading,
     isAuthenticated,
+    isApproved,
     userRole,
     userName,
     userEmail,
     isMaster,
+    isAdmin,
     isTeacher,
+    waitForAuthReady,
     login,
+    register,
     logout,
-    createMember
+    identifierToEmail,
   }
 }

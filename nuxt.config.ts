@@ -2,10 +2,12 @@ import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const variablesScssPath = resolve(__dirname, 'assets/scss/variables').replace(/\\/g, '/')
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  ssr: false,
   devtools: { enabled: true },
   
   app: {
@@ -42,7 +44,7 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@use "${resolve(__dirname, 'assets/scss/variables')}" as *;`,
+          additionalData: `@use "${variablesScssPath}" as *;`,
           silenceDeprecations: ['import', 'global-builtin', 'color-functions']
         }
       }

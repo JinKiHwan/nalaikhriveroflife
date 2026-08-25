@@ -15,7 +15,7 @@
           <cite>요한복음 4:14</cite>
         </blockquote>
       </div>
-      <!-- 몽골 국기 그라데이션 세로 바 -->
+      <!-- 몽골 국기 세로 바 -->
       <div class="mn-flag-bar">
         <div class="flag-stripe red"></div>
         <div class="flag-stripe blue"></div>
@@ -72,7 +72,7 @@
   width: 48px;
   height: 48px;
   border-radius: $radius-md;
-  background: $gradient-mn;
+  background: $mn-blue;
   color: #fff;
   display: flex;
   align-items: center;

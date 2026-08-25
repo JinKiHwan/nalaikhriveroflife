@@ -1,26 +1,22 @@
 // ──────────────────────────────────────────────
 // 몽골 날라흐 생명수 교회 - 디자인 토큰
-// 베이스: 화이트 / 포인트: 생수의 강을 닮은 리버 틸과 샌드 골드
+// 베이스: 화이트 / 포인트: 생수의 강을 닮은 리버 그린
 // ──────────────────────────────────────────────
 
 // 기존 변수명은 호환을 위해 유지하되 색상은 새 브랜드 팔레트로 교체
-$mn-red:  #b97836;
-$mn-blue: #0f766e;
-
-// Gradient definitions
-$gradient-mn: #0f766e;
-$gradient-mn-h: #0f766e;
+$mn-red:  #16835f;
+$mn-blue: #16835f;
 
 // Background & Surface
-$bg-main:    #f5f6fa;
+$bg-main:    #f6f7f4;
 $bg-sidebar: #ffffff;
 $bg-card:    #ffffff;
-$bg-hover:   #f0f4ff;
+$bg-hover:   #edf5f0;
 
 // Text
-$text-primary:   #111827;
-$text-secondary: #6b7280;
-$text-muted:     #9ca3af;
+$text-primary:   #202824;
+$text-secondary: #667069;
+$text-muted:     #98a19b;
 $text-light:     #ffffff;
 
 // Borders
@@ -62,9 +58,9 @@ $transition-elastic:  all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 // ──────────────────────────────────────────────
 $primary:        $mn-blue;
 $primary-hover:  $mn-red;
-$bg-input:       #f9fafb;
-$bg-dark:        #0f172a;
+$bg-input:       #f8faf8;
+$bg-dark:        #24362f;
 $border-hover:   rgba($mn-blue, 0.4);
-$text-dark:      #0f172a;
+$text-dark:      #202824;
 $shadow-premium: $shadow-md;
 $shadow-glow:    0 0 20px rgba($mn-blue, 0.15);

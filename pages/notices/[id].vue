@@ -2,7 +2,7 @@
   <div class="notice-detail-page">
     <div class="navigation-actions">
       <nuxt-link to="/notices" class="back-link">
-        ← 목록으로 돌아가기
+        ← {{ language === 'mn' ? 'Жагсаалт руу буцах' : '목록으로 돌아가기' }}
       </nuxt-link>
     </div>
 
@@ -11,21 +11,17 @@
         <!-- Title & Meta Header -->
         <header class="detail-header">
           <div class="detail-meta">
-            <span v-if="notice.isPinned" class="pinned-tag">중요</span>
-            <span class="detail-author">작성자: {{ notice.authorName || '관리자' }}</span>
+            <span v-if="notice.isPinned" class="pinned-tag">{{ language === 'mn' ? 'ЧУХАЛ' : '중요' }}</span>
+            <span class="detail-author">{{ language === 'mn' ? 'Зохиогч' : '작성자' }}: {{ notice.authorName || (language === 'mn' ? 'Удирдлага' : '관리자') }}</span>
             <span class="divider">|</span>
             <span class="detail-date">{{ formatDate(notice.createdAt) }}</span>
           </div>
-          <h1 class="detail-title">{{ notice.title }}</h1>
+          <h1 class="detail-title">{{ localizedTitle }}</h1>
         </header>
 
         <!-- Body text content -->
         <section class="detail-body">
-          <div class="notice-content">
-            <p v-for="(paragraph, index) in formattedContent" :key="index">
-              {{ paragraph }}
-            </p>
-          </div>
+          <div class="notice-content rich-content" v-html="resolvedContent"></div>
         </section>
       </article>
     </div>
@@ -33,26 +29,40 @@
     <!-- Loading State -->
     <div v-else-if="isLoading" class="glass-card loading-card">
       <div class="spinner"></div>
-      <p>공지사항을 불러오는 중입니다...</p>
+      <p>{{ language === 'mn' ? 'Зарлалыг ачаалж байна...' : '공지사항을 불러오는 중입니다...' }}</p>
     </div>
 
     <!-- Error State -->
     <div v-else class="glass-card error-card">
-      <p>공지사항 글을 찾을 수 없거나 불러오는 데 실패했습니다.</p>
-      <nuxt-link to="/notices" class="btn btn-secondary">목록으로</nuxt-link>
+      <p>{{ language === 'mn' ? 'Зарлал олдсонгүй эсвэл ачаалж чадсангүй.' : '공지사항 글을 찾을 수 없거나 불러오는 데 실패했습니다.' }}</p>
+      <nuxt-link to="/notices" class="btn btn-secondary">{{ language === 'mn' ? 'Жагсаалт' : '목록으로' }}</nuxt-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { doc, getDoc } from 'firebase/firestore'
 
 const route = useRoute()
+const { language } = useLanguage()
+const { isAdmin } = useAuth()
 const { $firebaseDb } = useNuxtApp()
+const { resolveRichTextImages } = useFirestoreImages()
 
 const notice = ref<any>(null)
 const isLoading = ref(true)
+const resolvedContent = ref('')
+
+const localizedTitle = computed(() => language.value === 'mn' ? (notice.value?.titleMn || notice.value?.titleKo || notice.value?.title) : (notice.value?.titleKo || notice.value?.title || notice.value?.titleMn))
+const localizedRawContent = computed(() => language.value === 'mn' ? (notice.value?.contentMn || notice.value?.contentKo || notice.value?.content || '') : (notice.value?.contentKo || notice.value?.content || notice.value?.contentMn || ''))
+
+const legacyToHtml = (content: string) => {
+  if (/<[a-z][\s\S]*>/i.test(content)) return content
+  const container = document.createElement('div')
+  return content.split('\n').filter(Boolean).map(paragraph => { container.textContent = paragraph; return `<p>${container.innerHTML}</p>` }).join('')
+}
+
+const renderContent = async () => { resolvedContent.value = await resolveRichTextImages(legacyToHtml(localizedRawContent.value)) }
 
 const fetchNoticeDetails = async () => {
   isLoading.value = true
@@ -60,8 +70,13 @@ const fetchNoticeDetails = async () => {
   try {
     const docRef = doc($firebaseDb, 'notices', noticeId)
     const snap = await getDoc(docRef)
-    if (snap.exists()) {
-      notice.value = snap.data()
+      if (snap.exists()) {
+        notice.value = { id: snap.id, ...snap.data() }
+        if (notice.value.isHidden === true && !isAdmin.value) {
+          await navigateTo('/notices', { replace: true })
+          return
+        }
+        await renderContent()
     }
   } catch (err) {
     console.error('Error fetching notice details:', err)
@@ -74,16 +89,12 @@ onMounted(() => {
   fetchNoticeDetails()
 })
 
-const formattedContent = computed(() => {
-  if (!notice.value?.content) return []
-  return notice.value.content.split('\n').filter((p: string) => p.trim() !== '')
-})
-
 const formatDate = (dateStr: string) => {
   if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  return new Date(dateStr).toLocaleDateString(language.value === 'mn' ? 'mn-MN' : 'ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
 }
+
+watch(language, renderContent)
 </script>
 
 <style lang="scss" scoped>
@@ -173,11 +184,17 @@ const formatDate = (dateStr: string) => {
 }
 
 .notice-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  white-space: pre-line;
+  color: #37463f;
+  font-size: 18px;
+  line-height: 1.95;
 }
+.rich-content :deep(p) { margin: 0 0 20px; }
+.rich-content :deep(h2) { margin: 42px 0 16px; font-size: 30px; }
+.rich-content :deep(h3) { margin: 34px 0 14px; font-size: 24px; }
+.rich-content :deep(ul), .rich-content :deep(ol) { margin: 18px 0; padding-left: 30px; }
+.rich-content :deep(blockquote) { margin: 28px 0; padding: 18px 22px; color: #4c6258; background: #f1f6f3; border-left: 4px solid $mn-blue; }
+.rich-content :deep(img) { max-width: 100%; height: auto; display: block; margin: 36px auto; }
+.rich-content :deep(a) { text-decoration: underline; text-underline-offset: 3px; }
 
 .loading-card, .error-card {
   text-align: center;

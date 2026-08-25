@@ -6,124 +6,77 @@
         <p class="subtitle">{{ t('notices.subtitle') }}</p>
       </div>
 
-      <!-- Notice Create Button (Master only) -->
       <button 
         v-if="isMaster" 
-        @click="showCreateForm = !showCreateForm" 
+        @click="toggleCreateForm"
         class="btn btn-primary"
       >
         {{ showCreateForm ? t('common.cancel') : t('notices.create') }}
       </button>
     </div>
 
-    <!-- Create Notice Form -->
     <transition name="expand">
-      <div v-if="showCreateForm" class="glass-card form-card">
-        <h2>새 공지사항 작성</h2>
-        <form @submit.prevent="handleCreateNotice" class="notice-form">
-          <div class="form-group">
-            <label for="title">공지 제목</label>
-            <input 
-              id="title" 
-              v-model="newNotice.title" 
-              type="text" 
-              required 
-              placeholder="공지 제목을 입력하세요"
-              class="input-field"
-            />
+      <section v-if="showCreateForm" class="create-card">
+        <div class="create-heading">
+          <span>NOTICE EDITOR</span>
+          <h2>{{ editingNotice ? (language === 'mn' ? 'Зарлал засах' : '공지사항 수정') : (language === 'mn' ? 'Шинэ зарлал бичих' : '새 공지사항 작성') }}</h2>
+          <p>{{ language === 'mn' ? 'Солонгос болон монгол хэл дээрх гарчиг, агуулгыг хамт оруулна уу.' : '한국어와 몽골어 제목 및 본문을 함께 작성해 주세요.' }}</p>
+        </div>
+        <form @submit.prevent="handleCreateNotice" class="create-form">
+          <div class="form-row notice-options">
+            <div class="form-group">
+              <label for="notice-author">{{ language === 'mn' ? 'Зохиогч' : '작성자' }}</label>
+              <input id="notice-author" :value="userName" class="input-field" disabled />
+            </div>
+            <div class="form-group form-checkbox">
+              <label class="checkbox-container">
+                <input type="checkbox" v-model="newNotice.isPinned" />
+                <span>{{ language === 'mn' ? 'Энэ зарлалыг жагсаалтын эхэнд тогтоох' : '이 공지를 목록 최상단에 고정' }}</span>
+              </label>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="content">공지 내용</label>
-            <textarea 
-              id="content" 
-              v-model="newNotice.content" 
-              rows="6" 
-              required
-              placeholder="공지할 상세 내용을 적어주세요."
-              class="input-field textarea-field"
-            ></textarea>
+          <div class="language-fields">
+            <section class="language-panel">
+              <div class="language-panel-title"><span>KO</span><strong>한국어</strong></div>
+              <div class="form-group"><label for="notice-title-ko">공지 제목</label><input id="notice-title-ko" v-model.trim="newNotice.titleKo" class="input-field" required /></div>
+              <RichTextEditor v-model="newNotice.contentKo" label="공지 내용" placeholder="공지할 상세 내용을 작성해 주세요." :upload-folder="`notices/${draftId}/ko`" @image-uploaded="trackBodyImage" />
+            </section>
+
+            <section class="language-panel">
+              <div class="language-panel-title"><span>MN</span><strong>Монгол хэл</strong></div>
+              <div class="form-group"><label for="notice-title-mn">Зарлалын гарчиг</label><input id="notice-title-mn" v-model.trim="newNotice.titleMn" class="input-field" required /></div>
+              <RichTextEditor v-model="newNotice.contentMn" label="Зарлалын агуулга" placeholder="Зарлалын дэлгэрэнгүй агуулгыг бичнэ үү." :upload-folder="`notices/${draftId}/mn`" @image-uploaded="trackBodyImage" />
+            </section>
           </div>
 
-          <!-- Pin to Top Option -->
-          <div class="form-group form-checkbox">
-            <label class="checkbox-container">
-              <input 
-                type="checkbox" 
-                v-model="newNotice.isPinned" 
-              />
-              <span class="checkmark"></span>
-              이 공지를 목록 최상단에 고정 (Pinned Notice)
-            </label>
-          </div>
-
+          <p v-if="formError" class="form-error">{{ formError }}</p>
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-              공지 등록
+              {{ isSubmitting ? (language === 'mn' ? 'Хадгалж байна...' : '저장 중...') : (editingNotice ? t('common.save') : (language === 'mn' ? 'Зарлал нийтлэх' : '공지 등록')) }}
             </button>
           </div>
         </form>
-      </div>
+      </section>
     </transition>
 
     <!-- Notices Board List -->
     <div class="notices-list">
-      <!-- Pinned Notices (Golden borders, pinned icons) -->
-      <div 
-        v-for="n in pinnedNotices" 
-        :key="n.id" 
-        class="glass-card notice-card pinned"
-        @click="navigateToDetail(n.id)"
-      >
-        <div class="notice-badge-line">
-          <span class="pinned-tag">
-            <svg class="pin-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12ZM8.8 14L10 12.8V4H14V12.8L15.2 14H8.8Z" fill="currentColor"/>
-            </svg>
-            {{ t('notices.pinned') }}
-          </span>
-          <span class="notice-date">{{ formatDate(n.createdAt) }}</span>
-        </div>
-        <h3 class="notice-title">{{ n.title }}</h3>
-        <p class="notice-excerpt">{{ getExcerpt(n.content) }}</p>
-        <div class="notice-footer">
-          <span class="read-more">{{ t('common.viewDetail') }} →</span>
-          <button 
-            v-if="isMaster" 
-            @click.stop="handleDeleteNotice(n.id, n.title)" 
-            class="btn-delete"
-          >
-            {{ t('common.delete') }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Regular Notices -->
-      <div 
-        v-for="n in regularNotices" 
-        :key="n.id" 
-        class="glass-card hoverable notice-card"
-        @click="navigateToDetail(n.id)"
-      >
-        <div class="notice-badge-line">
-          <span class="notice-date">{{ formatDate(n.createdAt) }}</span>
-        </div>
-        <h3 class="notice-title">{{ n.title }}</h3>
-        <p class="notice-excerpt">{{ getExcerpt(n.content) }}</p>
-        <div class="notice-footer">
-          <span class="read-more">{{ t('common.viewDetail') }} →</span>
-          <button 
-            v-if="isMaster" 
-            @click.stop="handleDeleteNotice(n.id, n.title)" 
-            class="btn-delete"
-          >
-            {{ t('common.delete') }}
-          </button>
+      <div v-if="displayNotices.length" class="notice-board-list">
+        <div class="notice-board-head"><span>{{ language === 'mn' ? 'Ангилал' : '카테고리' }}</span><span>{{ language === 'mn' ? 'Гарчиг' : '제목' }}</span><span>{{ language === 'mn' ? 'Огноо' : '날짜' }}</span><span></span></div>
+        <div v-for="n in displayNotices" :key="n.id" :class="['notice-board-row', { pinned: n.isPinned }]" @click="navigateToDetail(n.id)">
+          <span class="board-category">{{ n.isPinned ? t('notices.pinned') : (language === 'mn' ? 'Зарлал' : '공지사항') }}</span>
+          <strong>{{ localizedTitle(n) }}</strong>
+          <time>{{ formatDate(n.createdAt) }}</time>
+          <div class="row-actions">
+            <button v-if="canEdit(n)" type="button" class="btn-edit" @click.stop="startEdit(n)">{{ t('common.edit') }}</button>
+            <button v-if="isMaster" type="button" @click.stop="handleDeleteNotice(n)" class="btn-delete">{{ t('common.delete') }}</button>
+          </div>
         </div>
       </div>
 
       <!-- Empty State -->
-      <div v-if="pinnedNotices.length === 0 && regularNotices.length === 0" class="glass-card empty-card">
+      <div v-else class="glass-card empty-card">
         <p>{{ t('notices.empty') }}</p>
       </div>
     </div>
@@ -131,22 +84,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore'
+import { collection, getDocs, addDoc, doc, deleteDoc, query, orderBy, updateDoc } from 'firebase/firestore'
+import { prepareRichTextForSave, richTextExcerpt, richTextImageIds } from '~/utils/richText'
 
-const { isMaster, userName } = useAuth()
-const { t } = useLanguage()
+const { isMaster, user, userName } = useAuth()
+const { language, t } = useLanguage()
+const route = useRoute()
 const { $firebaseDb } = useNuxtApp()
+const { deleteImage } = useFirestoreImages()
 
 const allNotices = ref<any[]>([])
 const showCreateForm = ref(false)
 const isSubmitting = ref(false)
+const formError = ref('')
+const draftImageIds = ref<string[]>([])
+const draftId = ref(crypto.randomUUID())
+const editingNotice = ref<any | null>(null)
+const existingBodyImageIds = ref<string[]>([])
+const requestedEditHandled = ref(false)
 
-const newNotice = ref({
-  title: '',
-  content: '',
-  isPinned: false
-})
+const emptyNotice = () => ({ titleKo: '', titleMn: '', contentKo: '', contentMn: '', isPinned: false })
+const newNotice = ref(emptyNotice())
 
 const fetchNotices = async () => {
   try {
@@ -159,7 +117,8 @@ const fetchNotices = async () => {
         ...d.data()
       })
     })
-    allNotices.value = list
+    allNotices.value = list.filter(notice => notice.isHidden !== true)
+    openRequestedEdit()
   } catch (err) {
     console.error('Error fetching notices:', err)
   }
@@ -174,41 +133,115 @@ const regularNotices = computed(() => {
   return allNotices.value.filter(n => n.isPinned !== true)
 })
 
-onMounted(() => {
-  fetchNotices()
-})
+const displayNotices = computed(() => [...pinnedNotices.value, ...regularNotices.value])
+
+onMounted(fetchNotices)
+
+const canEdit = (notice: any) => isMaster.value || (!!user.value && notice.authorId === user.value.uid)
+const openCreateForm = () => {
+  editingNotice.value = null
+  existingBodyImageIds.value = []
+  showCreateForm.value = true
+  formError.value = ''
+}
+const startEdit = (notice: any) => {
+  if (!canEdit(notice)) return
+  editingNotice.value = notice
+  existingBodyImageIds.value = [...(notice.bodyImageIds || [])]
+  draftImageIds.value = []
+  draftId.value = notice.id
+  newNotice.value = {
+    titleKo: notice.titleKo || notice.title || '',
+    titleMn: notice.titleMn || '',
+    contentKo: notice.contentKo || notice.content || '',
+    contentMn: notice.contentMn || '',
+    isPinned: notice.isPinned === true,
+  }
+  showCreateForm.value = true
+  formError.value = ''
+  nextTick(() => document.querySelector('.create-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
+const openRequestedEdit = () => {
+  if (requestedEditHandled.value) return
+  const editId = typeof route.query.edit === 'string' ? route.query.edit : ''
+  if (!editId) return
+  requestedEditHandled.value = true
+  const notice = allNotices.value.find(item => item.id === editId)
+  if (notice && canEdit(notice)) startEdit(notice)
+}
+const trackBodyImage = (imageId: string) => { if (!draftImageIds.value.includes(imageId)) draftImageIds.value.push(imageId) }
+const resetCreateForm = () => {
+  newNotice.value = emptyNotice()
+  draftImageIds.value = []
+  draftId.value = crypto.randomUUID()
+  editingNotice.value = null
+  existingBodyImageIds.value = []
+  formError.value = ''
+}
+const cancelCreateForm = async () => {
+  showCreateForm.value = false
+  await Promise.all(draftImageIds.value.map(id => deleteImage(id).catch(() => undefined)))
+  resetCreateForm()
+}
+const toggleCreateForm = () => showCreateForm.value ? cancelCreateForm() : openCreateForm()
 
 const handleCreateNotice = async () => {
+  if (!$firebaseDb || !user.value) return
+  if (!richTextExcerpt(newNotice.value.contentKo) || !richTextExcerpt(newNotice.value.contentMn)) {
+    formError.value = language.value === 'mn' ? 'Солонгос болон монгол хэл дээрх агуулгыг хоёуланг нь бичнэ үү.' : '한국어와 몽골어 본문을 모두 작성해 주세요.'
+    return
+  }
   isSubmitting.value = true
+  formError.value = ''
   try {
-    await addDoc(collection($firebaseDb, 'notices'), {
-      ...newNotice.value,
-      authorName: userName.value,
-      createdAt: new Date().toISOString()
-    })
-
-    // Reset Form
-    newNotice.value = {
-      title: '',
-      content: '',
-      isPinned: false
+    const contentKo = prepareRichTextForSave(newNotice.value.contentKo)
+    const contentMn = prepareRichTextForSave(newNotice.value.contentMn)
+    const bodyImageIds = Array.from(new Set([...draftImageIds.value, ...richTextImageIds(contentKo), ...richTextImageIds(contentMn)]))
+    const payload = {
+      titleKo: newNotice.value.titleKo,
+      titleMn: newNotice.value.titleMn,
+      title: newNotice.value.titleKo,
+      contentKo,
+      contentMn,
+      content: contentKo,
+      isPinned: newNotice.value.isPinned,
+      bodyImageIds,
+    }
+    if (editingNotice.value) {
+      const previousBodyImageIds = [...existingBodyImageIds.value]
+      await updateDoc(doc($firebaseDb, 'notices', editingNotice.value.id), {
+        ...payload,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.value.uid,
+      })
+      await Promise.all(previousBodyImageIds.filter(id => !bodyImageIds.includes(id)).map(id => deleteImage(id).catch(() => undefined)))
+    } else {
+      await addDoc(collection($firebaseDb, 'notices'), {
+        ...payload,
+        authorName: userName.value,
+        authorId: user.value.uid,
+        createdAt: new Date().toISOString(),
+        isHidden: false
+      })
     }
     showCreateForm.value = false
+    resetCreateForm()
     await fetchNotices()
-  } catch (err) {
+  } catch (err: any) {
     console.error('Error adding notice:', err)
-    alert('공지 작성에 실패했습니다.')
+    formError.value = err.message || (language.value === 'mn' ? 'Зарлал нийтэлж чадсангүй.' : '공지 작성에 실패했습니다.')
   } finally {
     isSubmitting.value = false
   }
 }
 
-const handleDeleteNotice = async (id: string, title: string) => {
-  if (!confirm(`공지사항 "${title}" 글을 완전히 삭제하시겠습니까?`)) {
-    return
-  }
+const handleDeleteNotice = async (notice: any) => {
+  const title = localizedTitle(notice)
+  const message = language.value === 'mn' ? `“${title}” зарлалыг бүрмөсөн устгах уу?` : `공지사항 "${title}" 글을 완전히 삭제하시겠습니까?`
+  if (!confirm(message)) return
   try {
-    await deleteDoc(doc($firebaseDb, 'notices', id))
+    await deleteDoc(doc($firebaseDb, 'notices', notice.id))
+    await Promise.all((notice.bodyImageIds || []).map((id: string) => deleteImage(id).catch(() => undefined)))
     await fetchNotices()
   } catch (err) {
     console.error('Error deleting notice:', err)
@@ -222,14 +255,14 @@ const navigateToDetail = (id: string) => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  return new Date(dateStr).toLocaleDateString(language.value === 'mn' ? 'mn-MN' : 'ko-KR')
 }
 
-const getExcerpt = (text: string) => {
-  if (!text) return ''
-  return text.length > 120 ? text.substring(0, 120) + '...' : text
-}
+const localizedTitle = (notice: any) => language.value === 'mn' ? (notice.titleMn || notice.titleKo || notice.title) : (notice.titleKo || notice.title || notice.titleMn)
+
+onBeforeUnmount(() => {
+  if (draftImageIds.value.length) void Promise.all(draftImageIds.value.map(id => deleteImage(id).catch(() => undefined)))
+})
 </script>
 
 <style lang="scss" scoped>
@@ -257,38 +290,38 @@ const getExcerpt = (text: string) => {
   }
 }
 
-.form-card {
-  h2 {
-    font-size: 1.25rem;
-    margin-bottom: 20px;
-    color: $primary;
-    border-bottom: 1px solid $border-color;
-    padding-bottom: 12px;
-  }
-}
-
-.notice-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.textarea-field {
-  resize: vertical;
-  min-height: 100px;
-}
+.create-card { padding: 34px; background: #fff; border: 1px solid #dce5df; box-shadow: 0 8px 28px rgba(#234437, .08); }
+.create-heading { margin-bottom: 26px; padding-bottom: 20px; border-bottom: 1px solid #dfe7e2; }
+.create-heading > span { color: $mn-blue; font-size: 13px; font-weight: 800; letter-spacing: .08em; }
+.create-heading h2 { margin: 5px 0; font-size: 30px; }
+.create-heading p { color: $text-secondary; font-size: 13px; }
+.create-form { display: flex; flex-direction: column; gap: 22px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.notice-options .form-group { margin-bottom: 0; }
+.notice-options .form-checkbox { justify-content: flex-start; }
+.notice-options .form-checkbox::before { content: ''; height: 21px; flex: 0 0 21px; }
+.language-fields { display: grid; grid-template-columns: 1fr; gap: 24px; }
+.language-panel { padding: 24px; background: #fbfcfb; border: 1px solid #dce5df; }
+.language-panel-title { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; }
+.language-panel-title span { padding: 4px 8px; color: #fff; background: $mn-blue; font-size: 11px; font-weight: 800; }
+.language-panel-title strong { font-size: 20px; }
+.form-error { padding: 12px 14px; color: #933b34; background: #fff2f0; border: 1px solid #ebcac5; font-size: 13px; }
 
 .form-checkbox {
   display: flex;
-  flex-direction: row;
-  align-items: center;
+  justify-content: center;
 }
 
 .checkbox-container {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.9rem;
+  min-height: 44px;
+  padding: 0 14px;
+  background: #f5f7f5;
+  border: 1px solid #dce3de;
+  font-size: 13px;
   color: $text-secondary;
   cursor: pointer;
   user-select: none;
@@ -306,11 +339,19 @@ const getExcerpt = (text: string) => {
   justify-content: flex-end;
 }
 
-.notices-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
+.notices-list { display: flex; flex-direction: column; }
+.notice-board-list { border-top: 2px solid #354c42; }
+.notice-board-head,.notice-board-row { display: grid; grid-template-columns: 130px minmax(0,1fr) 170px 142px; gap: 18px; align-items: center; }
+.notice-board-head { padding: 12px 18px; color: #7b8781; background: #f1f4f2; font-size: 13px; font-weight: 700; }
+.notice-board-row { min-height: 74px; padding: 14px 18px; border-bottom: 1px solid #dfe8e2; cursor: pointer; transition: background .2s ease; }
+.notice-board-row:hover { background: #f4f8f5; }
+.notice-board-row.pinned { background: #fbf4e5; box-shadow: inset 4px 0 #c7973e; }
+.notice-board-row.pinned:hover { background: #f6ecd6; }
+.board-category { width: fit-content; padding: 4px 9px; color: #fff; background: $mn-blue; font-size: 13px; font-weight: 800; }
+.notice-board-row strong { overflow: hidden; color: #2d3a34; font-size: 20px; white-space: nowrap; text-overflow: ellipsis; }
+.notice-board-row time { color: #8e9a94; font-size: 13px; }
+@media(max-width:680px){.notice-board-head{display:none}.notice-board-row{grid-template-columns:1fr auto;gap:8px 12px}.notice-board-row .board-category{grid-column:1}.notice-board-row strong{grid-column:1/-1;grid-row:2}.notice-board-row time{grid-column:2;grid-row:1}.notice-board-row .row-actions{grid-column:2;grid-row:2}}
+@media(max-width:680px){.form-row{grid-template-columns:1fr}.create-card,.language-panel{padding:20px 14px}.notice-options .form-checkbox::before{display:none}}
 
 .notice-card {
   cursor: pointer;
@@ -385,21 +426,23 @@ const getExcerpt = (text: string) => {
   }
 }
 
+.row-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+.btn-edit,
 .btn-delete {
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
   padding: 4px 10px;
   border-radius: $radius-sm;
   font-size: 0.75rem;
   cursor: pointer;
   transition: $transition-smooth;
 
-  &:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
-  }
 }
+
+.btn-edit { color: #116b4d; border: 1px solid #85aa9b; }
+.btn-edit:hover { background: #eef7f2; }
+.btn-delete { color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+.btn-delete:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
 
 .empty-card {
   text-align: center;

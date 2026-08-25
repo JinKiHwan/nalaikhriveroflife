@@ -1,79 +1,177 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function: check if user is authenticated
-    function isAuthenticated() {
+    function signedIn() {
       return request.auth != null;
     }
-    
-    // Helper function: get user document from users collection
-    function getUserData() {
+
+    function profileExists() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function profile() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
-    // Helper function: check if user is master
-    function isMaster() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             getUserData().role == 'master';
-    }
-    
-    // Helper function: check if user is teacher or master
-    function isTeacher() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             (getUserData().role == 'teacher' || getUserData().role == 'master');
+
+    function approved() {
+      return profileExists() && (profile().status == 'approved' || !('status' in profile()));
     }
 
-    // Users Collection
+    function master() {
+      return approved() && profile().role == 'master';
+    }
+
+    function viceMaster() {
+      return approved() && profile().role == 'vice_master';
+    }
+
+    function operator() {
+      return master() || viceMaster();
+    }
+
+    function teacher() {
+      return approved() && (profile().role == 'teacher' || profile().role == 'vice_master' || profile().role == 'master');
+    }
+
+    function delegatedRole(role) {
+      return role == 'vice_master' || role == 'teacher' || role == 'normal';
+    }
+
+    function viceMasterVisibilityUpdate() {
+      return viceMaster()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'isHidden',
+          'hiddenAt',
+          'hiddenBy'
+        ]);
+    }
+
+    function authorContentUpdate() {
+      return approved()
+        && resource.data.authorId == request.auth.uid
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.authorName == resource.data.authorName
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.isHidden == resource.data.isHidden;
+    }
+
+    function ownImage() {
+      return approved() && resource.data.createdBy == request.auth.uid;
+    }
+
     match /users/{userId} {
-      // Authenticated members can read other members' basic profiles (e.g. for listing/comments)
-      allow read: if isAuthenticated();
-      
-      // Allow a user to create/write their own document initially, or if they are created by the Master
-      allow create, update: if (isAuthenticated() && request.auth.uid == userId) || isMaster();
-      
-      // Only Master can delete user documents
-      allow delete: if isMaster();
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.userId is string
+        && request.resource.data.name is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'normal'
+        && request.resource.data.status == 'pending';
+
+      allow get: if (signedIn() && request.auth.uid == userId) || operator();
+      allow list: if operator();
+      allow update: if (
+        master()
+        && !(request.auth.uid == userId && request.resource.data.status == 'expelled')
+        && (
+          (
+            resource.data.role == 'master'
+            && request.auth.uid == userId
+            && request.resource.data.role == 'master'
+          )
+          || (
+            resource.data.role != 'master'
+            && delegatedRole(request.resource.data.role)
+          )
+        )
+      ) || (
+        viceMaster()
+        && (resource.data.role == 'normal' || resource.data.role == 'teacher')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'approvedAt',
+          'approvedBy',
+          'rejectedAt',
+          'rejectedBy',
+          'expelledAt',
+          'expelledBy'
+        ])
+        && (
+          (
+            resource.data.status == 'pending'
+            && (
+              request.resource.data.status == 'approved'
+              || request.resource.data.status == 'rejected'
+            )
+          )
+          || (
+            (resource.data.status == 'approved' || !('status' in resource.data))
+            && request.resource.data.status == 'expelled'
+          )
+        )
+      );
+      allow delete: if false;
     }
 
-    // Sermons Collection
     match /sermons/{sermonId} {
-      allow read: if isAuthenticated();
-      allow write: if isMaster();
+      allow read: if approved();
+      allow create: if master();
+      allow update: if master() || authorContentUpdate() || viceMasterVisibilityUpdate();
+      allow delete: if operator();
     }
 
-    // Notices Collection
     match /notices/{noticeId} {
-      allow read: if isAuthenticated();
-      allow write: if isMaster();
+      allow read: if approved();
+      allow create: if master();
+      allow update: if master() || authorContentUpdate() || viceMasterVisibilityUpdate();
+      allow delete: if operator();
     }
 
-    // Teachers Posts Collection
+    match /church_news/{postId} {
+      allow read: if approved();
+      allow create: if master();
+      allow update: if master() || authorContentUpdate() || viceMasterVisibilityUpdate();
+      allow delete: if operator();
+    }
+
+    match /church_events/{postId} {
+      allow read: if approved();
+      allow create: if master();
+      allow update: if master() || authorContentUpdate() || viceMasterVisibilityUpdate();
+      allow delete: if operator();
+    }
+
+    match /content_images/{imageId} {
+      allow read: if approved();
+      allow create: if approved() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if master() || (
+        ownImage()
+        && request.resource.data.createdBy == resource.data.createdBy
+      );
+      allow delete: if operator() || ownImage();
+    }
+
+    match /settings/{settingId} {
+      allow read: if approved();
+      allow create, update: if operator()
+        && settingId == 'sermon_categories'
+        && request.resource.data.items is list;
+      allow delete: if master() && settingId == 'sermon_categories';
+    }
+
     match /teachers_posts/{postId} {
-      allow read, write: if isTeacher();
+      allow read, write: if teacher();
     }
 
-    // QT Collection
     match /qt/{qtDate} {
-      allow read: if isAuthenticated();
-      allow write: if isMaster();
-      
-      // Comments Subcollection
-      match /comments/{commentId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-        allow update, delete: if isMaster() || (isAuthenticated() && resource.data.createdBy == request.auth.uid);
-      }
-    }
+      allow read: if approved();
+      allow write: if master();
 
-    // Events Relay Logs Collection
-    match /events_bible_relay_logs/{logId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      allow delete: if isMaster() || (isAuthenticated() && resource.data.createdBy == request.auth.uid);
-      allow update: if false; // Logs cannot be updated once created
+      match /comments/{commentId} {
+        allow read: if approved();
+        allow create: if approved() && request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if master() || (approved() && resource.data.createdBy == request.auth.uid);
+      }
     }
   }
 }

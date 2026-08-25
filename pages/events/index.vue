@@ -1,545 +1,126 @@
 <template>
-  <div class="events-page">
-    <div class="events-header">
-      <h1>{{ t('events.title') }}</h1>
-      <p class="subtitle">{{ t('events.subtitle') }}</p>
-    </div>
+  <div class="events-board-page">
+    <header class="board-page-header">
+      <div><h1>교회행사</h1><p>현재 진행 중이거나 예정된 교회 행사를 안내합니다.</p></div>
+      <button v-if="isMaster" type="button" class="btn btn-primary" @click="showForm ? cancelForm() : openCreate()">{{ showForm ? '작성 취소' : '행사 등록' }}</button>
+    </header>
 
-    <!-- Stats & Progress Section -->
-    <section class="glass-card stats-card">
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-label">{{ t('events.total') }}</span>
-          <span class="stat-value">{{ totalChaptersSum }} / {{ TARGET_CHAPTERS }} {{ t('events.chapters') }}</span>
+    <section v-if="showForm" class="card create-card">
+      <h2>{{ editingPost ? '교회행사 수정' : '새 교회행사 등록' }}</h2>
+      <form class="create-form" @submit.prevent="createPost">
+        <div class="form-row">
+          <div class="form-group"><label for="event-category">카테고리</label><input id="event-category" v-model.trim="form.category" class="input-field" required /></div>
+          <div class="form-group"><label for="event-date">행사 날짜</label><input id="event-date" v-model="form.date" type="date" class="input-field" required /></div>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">{{ t('events.progress') }}</span>
-          <span class="stat-value percent">{{ completionPercent }}%</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">{{ t('events.participants') }}</span>
-          <span class="stat-value">{{ uniqueParticipantsCount }} {{ t('events.people') }}</span>
-        </div>
-      </div>
-
-      <!-- Glowing Progress Bar -->
-      <div class="progress-container">
-        <div class="progress-track">
-          <div class="progress-fill" :style="{ width: `${completionPercent}%` }">
-            <span class="progress-glow"></span>
-          </div>
-        </div>
-        <div class="progress-labels">
-          <span>{{ t('events.start') }}</span>
-          <span>{{ t('events.goal') }}</span>
-        </div>
-      </div>
+        <div class="form-group"><label for="event-title">제목</label><input id="event-title" v-model.trim="form.title" class="input-field" required /></div>
+        <div class="form-group"><label for="event-thumbnail">썸네일 이미지 URL</label><input id="event-thumbnail" v-model.trim="form.thumbnailUrl" type="url" class="input-field" placeholder="비워두면 기본 이미지가 표시됩니다." /></div>
+        <div class="form-group"><label for="event-content">행사 안내</label><textarea id="event-content" v-model.trim="form.content" class="input-field textarea-field" rows="8" required></textarea></div>
+        <button class="btn btn-primary" :disabled="isSubmitting">{{ isSubmitting ? '저장 중...' : (editingPost ? '수정 저장' : '등록하기') }}</button>
+      </form>
     </section>
 
-    <div class="events-content-grid">
-      <!-- Left Column: Report Form -->
-      <section class="glass-card report-card">
-        <h2>{{ t('events.report') }}</h2>
-        <form @submit.prevent="handleReportReading" class="report-form">
-          <div class="form-group">
-            <label for="bible-book">성경 선택</label>
-            <select id="bible-book" v-model="form.book" class="input-field select-field" required>
-              <option value="" disabled>성경을 선택하세요</option>
-              <optgroup label="구약성경">
-                <option v-for="b in OLD_TESTAMENT" :key="b" :value="b">{{ b }}</option>
-              </optgroup>
-              <optgroup label="신약성경">
-                <option v-for="b in NEW_TESTAMENT" :key="b" :value="b">{{ b }}</option>
-              </optgroup>
-            </select>
+    <div v-if="posts.length" class="thumbnail-board">
+      <article v-for="post in posts" :key="post.id" class="thumbnail-card">
+        <nuxt-link :to="`/events/${post.id}`" class="card-link">
+          <div class="thumbnail"><img :src="post.thumbnailUrl || defaultImage" alt="" @error="useDefaultImage" /></div>
+          <div class="card-copy">
+            <div class="card-meta"><span>{{ post.category || 'CHURCH EVENT' }}</span><time>{{ formatDate(post.date || post.createdAt) }}</time></div>
+            <h2>{{ post.title }}</h2>
+            <p>{{ post.content }}</p>
           </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label for="start-chapter">시작 장</label>
-              <input 
-                id="start-chapter" 
-                v-model.number="form.startChapter" 
-                type="number" 
-                min="1" 
-                required 
-                placeholder="1"
-                class="input-field"
-              />
-            </div>
-            <div class="form-group">
-              <label for="end-chapter">끝 장</label>
-              <input 
-                id="end-chapter" 
-                v-model.number="form.endChapter" 
-                type="number" 
-                min="1" 
-                required 
-                placeholder="5"
-                class="input-field"
-              />
-            </div>
-          </div>
-
-          <div v-if="computedChapters > 0" class="chapters-preview">
-            총 <strong>{{ computedChapters }}장</strong>을 읽으셨습니다.
-          </div>
-
-          <button type="submit" class="btn btn-primary w-full" :disabled="isSubmitting || computedChapters <= 0">
-            읽기 완료 인증
-          </button>
-        </form>
-      </section>
-
-      <!-- Right Column: Timeline logs -->
-      <section class="glass-card logs-card">
-        <h2>{{ t('events.feed') }}</h2>
-        <div class="logs-feed">
-          <div 
-            v-for="l in logs" 
-            :key="l.id" 
-            class="feed-item"
-          >
-            <div class="feed-indicator"></div>
-            <div class="feed-content">
-              <div class="feed-text">
-                <strong class="member-name">{{ l.name }}</strong> 성도님이 
-                <span class="read-passage">{{ l.book }} {{ l.startChapter }}장 ~ {{ l.endChapter }}장</span>을 
-                읽었습니다!
-              </div>
-              <div class="feed-meta">
-                <span class="chapters-badge">+{{ l.totalChapters }}장</span>
-                <span class="feed-time">{{ formatTime(l.createdAt) }}</span>
-                <button 
-                  v-if="isMaster || l.createdBy === currentUid" 
-                  @click="handleDeleteLog(l.id, l.name)"
-                  class="btn-log-delete"
-                >
-                  {{ t('common.cancel') }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="logs.length === 0" class="no-logs">
-            <p>{{ t('events.noLogs') }}</p>
-          </div>
+        </nuxt-link>
+        <div v-if="canEdit(post) || isMaster" class="card-actions">
+          <button v-if="canEdit(post)" type="button" class="edit-button" @click="startEdit(post)">수정</button>
+          <button v-if="isMaster" type="button" class="delete-button" @click="deletePost(post)">삭제</button>
         </div>
-      </section>
+      </article>
     </div>
+    <div v-else class="empty-board">현재 진행중인 행사가 없습니다</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore'
 
-const { userName, user: currentUser, isMaster } = useAuth()
-const { t } = useLanguage()
+const { isMaster, user, userName } = useAuth()
+const route = useRoute()
 const { $firebaseDb } = useNuxtApp()
-
-const TARGET_CHAPTERS = 1189 // Total chapters in the Bible (OT: 929, NT: 260)
-
-const currentUid = computed(() => currentUser.value?.uid || '')
-
-const logs = ref<any[]>([])
+const defaultImage = '/images/bg_05.webp'
+const posts = ref<any[]>([])
+const showForm = ref(false)
 const isSubmitting = ref(false)
+const editingPost = ref<any | null>(null)
+const requestedEditHandled = ref(false)
+const emptyForm = () => ({ category: 'CHURCH EVENT', title: '', date: new Date().toISOString().slice(0,10), thumbnailUrl: '', content: '' })
+const form = ref(emptyForm())
 
-const form = ref({
-  book: '',
-  startChapter: null as number | null,
-  endChapter: null as number | null
-})
-
-// Quick reference lists for Korean Bible books
-const OLD_TESTAMENT = [
-  '창세기', '출애굽기', '레위기', '민수기', '신명기', '여호수아', '사사기', '룻기', 
-  '사무엘상', '사무엘하', '열왕기상', '열왕기하', '역대상', '역대하', '에스라', '느헤미야', 
-  '에스더', '욥기', '시편', '잠언', '전도서', '아가', '이사야', '예레미야', '예레미야 애가', 
-  '에스겔', '다니엘', '호세아', '요엘', '아모스', '오바destination', '요나', '미가', '나훔', 
-  '하박국', '스바냐', '학개', '스가랴', '말라기'
-]
-
-const NEW_TESTAMENT = [
-  '마태복음', '마가복음', '누가복음', '요한복음', '사도행전', '로마서', '고린도전서', 
-  '고린도후서', '갈라디아서', '에베소서', '빌립보서', '골로새서', '데살로니가전서', 
-  '데살로니가후서', '디모데전서', '디모데후서', '디도서', '빌레몬서', '히브리서', 
-  '야고보서', '베드로전서', '베드로후서', '요한일서', '요한이서', '요한삼서', '유다서', 
-  '요한계시록'
-]
-
-const computedChapters = computed(() => {
-  if (form.value.startChapter && form.value.endChapter) {
-    const diff = form.value.endChapter - form.value.startChapter + 1
-    return diff > 0 ? diff : 0
-  }
-  return 0
-})
-
-// Calculate cumulative stats from loaded logs
-const totalChaptersSum = computed(() => {
-  const sum = logs.value.reduce((acc, log) => acc + (log.totalChapters || 0), 0)
-  return sum
-})
-
-const completionPercent = computed(() => {
-  if (totalChaptersSum.value === 0) return 0
-  const pct = Math.min((totalChaptersSum.value / TARGET_CHAPTERS) * 100, 100)
-  return parseFloat(pct.toFixed(1))
-})
-
-const uniqueParticipantsCount = computed(() => {
-  const usersSet = new Set(logs.value.map(log => log.createdBy))
-  return usersSet.size
-})
-
-const fetchLogs = async () => {
-  try {
-    const colRef = collection($firebaseDb, 'events_bible_relay_logs')
-    const q = query(colRef, orderBy('createdAt', 'desc'), limit(100))
-    const snap = await getDocs(q)
-    const list: any[] = []
-    snap.forEach((d) => {
-      list.push({
-        id: d.id,
-        ...d.data()
-      })
-    })
-    logs.value = list
-  } catch (err) {
-    console.error('Error fetching event logs:', err)
-  }
+const fetchPosts = async () => {
+  if (!$firebaseDb) return
+  const snapshot = await getDocs(query(collection($firebaseDb, 'church_events'), orderBy('date', 'desc')))
+  posts.value = snapshot.docs.map(item => ({ id: item.id, ...item.data() })).filter((post: any) => post.isHidden !== true)
+  openRequestedEdit()
 }
-
-onMounted(() => {
-  fetchLogs()
-})
-
-const handleReportReading = async () => {
-  if (!form.value.book || !form.value.startChapter || !form.value.endChapter) return
-  if (computedChapters.value <= 0) {
-    alert('끝 장은 시작 장보다 크거나 같아야 합니다.')
-    return
+const canEdit = (post: any) => isMaster.value || (!!user.value && post.authorId === user.value.uid)
+const openCreate = () => { editingPost.value = null; form.value = emptyForm(); showForm.value = true }
+const cancelForm = () => { editingPost.value = null; form.value = emptyForm(); showForm.value = false }
+const startEdit = (post: any) => {
+  if (!canEdit(post)) return
+  editingPost.value = post
+  form.value = {
+    category: post.category || 'CHURCH EVENT',
+    title: post.title || '',
+    date: post.date || new Date().toISOString().slice(0,10),
+    thumbnailUrl: post.thumbnailUrl || '',
+    content: post.content || '',
   }
-
+  showForm.value = true
+  nextTick(() => document.querySelector('.create-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
+const openRequestedEdit = () => {
+  if (requestedEditHandled.value) return
+  const editId = typeof route.query.edit === 'string' ? route.query.edit : ''
+  if (!editId) return
+  requestedEditHandled.value = true
+  const post = posts.value.find(item => item.id === editId)
+  if (post && canEdit(post)) startEdit(post)
+}
+const createPost = async () => {
+  if (!$firebaseDb || !user.value) return
   isSubmitting.value = true
   try {
-    const colRef = collection($firebaseDb, 'events_bible_relay_logs')
-    await addDoc(colRef, {
-      book: form.value.book,
-      startChapter: form.value.startChapter,
-      endChapter: form.value.endChapter,
-      totalChapters: computedChapters.value,
-      name: userName.value,
-      createdBy: currentUid.value,
-      createdAt: new Date().toISOString()
-    })
-
-    // Reset Form
-    form.value.book = ''
-    form.value.startChapter = null
-    form.value.endChapter = null
-
-    await fetchLogs()
-  } catch (err) {
-    console.error('Error adding relay log:', err)
-    alert('인증 등록에 실패했습니다.')
-  } finally {
-    isSubmitting.value = false
-  }
+    if (editingPost.value) {
+      await updateDoc(doc($firebaseDb, 'church_events', editingPost.value.id), {
+        ...form.value,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.value.uid,
+      })
+    } else {
+      await addDoc(collection($firebaseDb, 'church_events'), {
+        ...form.value,
+        authorName: userName.value,
+        authorId: user.value.uid,
+        createdAt: new Date().toISOString(),
+        isHidden: false,
+      })
+    }
+    editingPost.value = null
+    form.value = emptyForm()
+    showForm.value = false
+    await fetchPosts()
+  } finally { isSubmitting.value = false }
 }
-
-const handleDeleteLog = async (id: string, name: string) => {
-  if (!confirm(`${name} 성도님의 해당 통독 인증 기록을 취소/삭제하시겠습니까?`)) {
-    return
-  }
-  try {
-    await deleteDoc(doc($firebaseDb, 'events_bible_relay_logs', id))
-    await fetchLogs()
-  } catch (err) {
-    console.error('Error deleting event log:', err)
-    alert('삭제 오류가 발생했습니다.')
-  }
+const deletePost = async (post: any) => {
+  if (!$firebaseDb || !confirm(`“${post.title}” 행사를 삭제할까요?`)) return
+  await deleteDoc(doc($firebaseDb, 'church_events', post.id))
+  await fetchPosts()
 }
-
-const formatTime = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-}
+const useDefaultImage = (event: Event) => { (event.currentTarget as HTMLImageElement).src = defaultImage }
+const formatDate = (value: string) => value ? value.slice(0,10).replaceAll('-', '. ') : ''
+onMounted(fetchPosts)
 </script>
 
 <style lang="scss" scoped>
-
-.events-page {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.events-header {
-  h1 {
-    font-size: 1.75rem;
-    color: $text-primary;
-    margin-bottom: 6px;
-  }
-  .subtitle {
-    font-size: 0.95rem;
-    color: $text-secondary;
-  }
-}
-
-.stats-card {
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  text-align: center;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  .stat-label {
-    font-size: 0.85rem;
-    color: $text-secondary;
-    font-weight: 500;
-  }
-
-  .stat-value {
-    font-family: $font-title;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: $primary;
-
-    &.percent {
-      color: $primary-hover;
-    }
-  }
-}
-
-.progress-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.progress-track {
-  height: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid $border-color;
-  border-radius: 9999px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, $primary, $primary-hover);
-  border-radius: 9999px;
-  position: relative;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.progress-glow {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 10px;
-  background: #fff;
-  filter: blur(4px);
-  opacity: 0.6;
-}
-
-.progress-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: $text-muted;
-  font-weight: 500;
-}
-
-.events-content-grid {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 28px;
-
-  @media (max-width: 850px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.report-card {
-  height: fit-content;
-  h2 {
-    font-size: 1.25rem;
-    color: $primary;
-    border-bottom: 1px solid $border-color;
-    padding-bottom: 12px;
-    margin-bottom: 20px;
-  }
-}
-
-.report-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.select-field {
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg fill='%2394a3b8' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 40px;
-}
-
-.form-row-2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.chapters-preview {
-  background: rgba(233, 196, 106, 0.05);
-  border: 1px solid rgba(233, 196, 106, 0.15);
-  color: $text-secondary;
-  padding: 10px 14px;
-  border-radius: $radius-sm;
-  font-size: 0.85rem;
-  text-align: center;
-  
-  strong {
-    color: $primary;
-  }
-}
-
-.logs-card {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
-  h2 {
-    font-size: 1.25rem;
-    color: $text-primary;
-    border-bottom: 1px solid $border-color;
-    padding-bottom: 12px;
-  }
-}
-
-.logs-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-height: 480px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.feed-item {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.01);
-  border: 1px solid $border-color;
-  border-radius: $radius-sm;
-  transition: $transition-smooth;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: $border-hover;
-  }
-}
-
-.feed-indicator {
-  width: 8px;
-  height: 8px;
-  background: $primary;
-  border-radius: 50%;
-  margin-top: 6px;
-  box-shadow: 0 0 8px $primary;
-  flex-shrink: 0;
-}
-
-.feed-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.feed-text {
-  font-size: 0.9rem;
-  color: $text-secondary;
-  line-height: 1.4;
-
-  .member-name {
-    color: $text-primary;
-  }
-
-  .read-passage {
-    color: $primary;
-    font-weight: 600;
-  }
-}
-
-.feed-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.chapters-badge {
-  background: rgba(16, 185, 129, 0.15);
-  color: $success;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.feed-time {
-  font-size: 0.75rem;
-  color: $text-muted;
-}
-
-.btn-log-delete {
-  background: none;
-  border: none;
-  color: $text-muted;
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 0;
-
-  &:hover {
-    color: #ef4444;
-    text-decoration: underline;
-  }
-}
-
-.no-logs {
-  text-align: center;
-  color: $text-muted;
-  font-size: 0.9rem;
-  padding: 40px 10px;
-}
-
-.w-full {
-  width: 100%;
-}
+.events-board-page { width:min(1380px,calc(100% - 64px));min-height:calc(100vh - 76px);margin:0 auto;padding:54px 0 88px; }.board-page-header { display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:36px;padding-bottom:22px;border-bottom:2px solid #354c42; }.board-page-header h1{margin-bottom:6px;font-size:42px}.board-page-header p{color:$text-secondary;font-size:18px}.create-card{margin-bottom:36px}.create-card h2{margin-bottom:22px;font-size:26px}.create-form{display:flex;flex-direction:column;gap:14px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}.textarea-field{min-height:160px;resize:vertical}
+.thumbnail-board{display:grid;grid-template-columns:repeat(3,1fr);gap:34px 20px}.thumbnail-card{position:relative;min-width:0}.card-link{display:block;color:#26332e}.card-link:hover{color:#26332e}.thumbnail{aspect-ratio:1.5/1;overflow:hidden;background:#e5ece8}.thumbnail img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .4s ease}.card-link:hover img{transform:scale(1.04)}.card-copy{padding:16px 2px 0}.card-meta{display:flex;justify-content:space-between;gap:10px;color:#16835f;font-size:13px;font-weight:800;letter-spacing:.04em}.card-meta time{color:#8e9a94;font-weight:500}.card-copy h2{margin:9px 0 7px;font-size:20px;line-height:1.45}.card-copy p{display:-webkit-box;overflow:hidden;color:#68746e;font-size:18px;line-height:1.65;-webkit-box-orient:vertical;-webkit-line-clamp:3}.card-actions{position:absolute;right:8px;top:8px;display:flex;gap:6px}.edit-button,.delete-button{padding:6px 10px;color:#fff;border:0;cursor:pointer;font-size:13px}.edit-button{background:rgba(#16815d,.94)}.delete-button{background:rgba(#9f1f16,.86)}.empty-board{min-height:260px;display:grid;place-items:center;color:$text-muted;background:#f0f3f1;font-size:18px}
+@media(max-width:980px){.thumbnail-board{grid-template-columns:1fr 1fr}.events-board-page{width:calc(100% - 40px)}}@media(max-width:640px){.events-board-page{width:calc(100% - 28px);padding-top:36px}.board-page-header{align-items:flex-start;flex-direction:column}.board-page-header h1{font-size:36px}.thumbnail-board,.form-row{grid-template-columns:1fr}}
 </style>

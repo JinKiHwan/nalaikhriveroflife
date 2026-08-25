@@ -1,5 +1,13 @@
 @use './variables' as *;
 
+@font-face {
+  font-family: 'Ehwa';
+  src: url('/font/ehwa.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 // ── Reset ──────────────────────────────────────
 *, *::before, *::after {
   box-sizing: border-box;
@@ -20,6 +28,7 @@ body {
   background-color: $bg-main;
   color: $text-primary;
   font-family: $font-body;
+  font-size: 18px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -34,8 +43,7 @@ body {
 .qt-page,
 .events-page,
 .teachers-page,
-.teacher-post-detail-page,
-.admin-page {
+.teacher-post-detail-page {
   width: 100%;
   max-width: 1380px;
   min-height: calc(100vh - #{$header-height});
@@ -51,8 +59,7 @@ body {
   .qt-page,
   .events-page,
   .teachers-page,
-  .teacher-post-detail-page,
-  .admin-page {
+  .teacher-post-detail-page {
     padding: 24px 16px 48px;
   }
 }
@@ -72,6 +79,10 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   color: $text-primary;
   letter-spacing: -0.02em;
+}
+
+html:lang(ko) :is(h1, h2, h3, h4, h5, h6) {
+  font-family: 'Ehwa', $font-title !important;
 }
 
 a {
@@ -96,26 +107,6 @@ a {
   }
 }
 
-// ── Gradient Accent Utilities ───────────────────
-.gradient-text {
-  background: $gradient-mn;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-bar {
-  height: 4px;
-  background: $gradient-mn-h;
-  border-radius: $radius-full;
-}
-
-.gradient-btn {
-  background: $gradient-mn;
-  color: $text-light !important;
-  border: none;
-}
-
 // ── Buttons ────────────────────────────────────
 .btn {
   display: inline-flex;
@@ -132,7 +123,7 @@ a {
   transition: $transition-smooth;
 
   &.btn-primary {
-    background: $gradient-mn;
+    background: $mn-blue;
     color: $text-light;
     box-shadow: 0 2px 10px rgba($mn-red, 0.25);
     &:hover:not(:disabled) {

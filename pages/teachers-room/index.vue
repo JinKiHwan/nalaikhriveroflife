@@ -407,7 +407,7 @@ const formatSize = (bytes: number) => {
 
   .progress-bar {
     height: 6px;
-    background: linear-gradient(90deg, $primary, $primary-hover);
+    background: $primary;
     border-radius: 9999px;
     transition: width 0.2s ease;
   }

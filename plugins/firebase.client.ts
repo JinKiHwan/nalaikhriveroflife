@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
@@ -27,18 +27,9 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     try {
       app = initializeApp(firebaseConfig)
       auth = getAuth(app)
+      await setPersistence(auth, browserLocalPersistence)
       db = getFirestore(app)
       storage = getStorage(app)
-
-      // Block Nuxt routing/mounting until Firebase Auth resolves the initial state
-      if (process.client && auth) {
-        await new Promise<void>((resolve) => {
-          const unsubscribe = onAuthStateChanged(auth, () => {
-            resolve()
-            unsubscribe()
-          })
-        })
-      }
     } catch (error) {
       console.error('Firebase initialization failed:', error)
     }

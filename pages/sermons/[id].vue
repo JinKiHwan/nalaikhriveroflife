@@ -1,293 +1,119 @@
 <template>
-  <div class="sermon-detail-page">
-    <div class="navigation-actions">
-      <nuxt-link to="/sermons" class="back-link">
-        ← 목록으로 돌아가기
-      </nuxt-link>
-    </div>
+  <article class="sermon-detail-page">
+    <nuxt-link to="/sermons" class="back-link">← {{ language === 'mn' ? 'Амийн үг' : '생명의 말씀 목록' }}</nuxt-link>
 
-    <div v-if="sermon" class="sermon-container">
-      <!-- Sermon Main Glass Card -->
-      <article class="glass-card detail-card">
-        <!-- Title & Meta Header -->
-        <header class="detail-header">
-          <div class="detail-meta">
-            <span class="detail-date">{{ formatDate(sermon.date) }}</span>
-            <span class="divider">•</span>
-            <span class="detail-speaker">{{ sermon.speaker }} 강사</span>
-          </div>
-          <h1 class="detail-title">{{ sermon.title }}</h1>
-          
-          <div class="detail-passage">
-            <svg class="bible-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 5C19.89 4.65 18.5 4.5 17 4.5C15.5 4.5 14 4.8 12.5 5.5C11 4.8 9.5 4.5 8 4.5C6.5 4.5 5.11 4.65 4 5V19C5.11 18.65 6.5 18.5 8 18.5C9.5 18.5 11 18.8 12.5 19.5C14 18.8 15.5 18.5 17 18.5C18.5 18.5 19.89 18.65 21 19V5ZM19 16.89C18.36 16.65 17.7 16.5 17 16.5C15.82 16.5 14.65 16.79 13.5 17.38V7.5C14.54 7.02 15.75 6.79 17 6.79C17.7 6.79 18.36 6.88 19 7.07V16.89Z" fill="currentColor"/>
-            </svg>
-            <span class="passage-label">본문 말씀:</span>
-            <strong class="passage-text">{{ sermon.biblePassage }}</strong>
-          </div>
-        </header>
-
-        <!-- Video Player Section -->
-        <div v-if="sermon.videoUrl" class="video-section">
-          <div class="video-ratio-box">
-            <iframe 
-              :src="embedUrl(sermon.videoUrl)" 
-              frameborder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen
-              title="Sermon Video Player"
-            ></iframe>
-          </div>
+    <template v-if="sermon">
+      <header class="detail-header">
+        <span class="detail-category">{{ localizedCategory }}</span>
+        <h1>{{ localizedTitle }}</h1>
+        <div class="detail-meta">
+          <time>{{ formatDate(sermon.date || sermon.createdAt) }}</time><i></i>
+          <span>{{ language === 'mn' ? 'Зохиогч' : '작성자' }} {{ sermon.authorName || (language === 'mn' ? 'Удирдлага' : '관리자') }}</span>
         </div>
+      </header>
 
-        <!-- Written Content Notes -->
-        <section class="detail-body">
-          <h2>설교 요약 및 노트</h2>
-          <div class="sermon-content">
-            <p v-for="(paragraph, index) in formattedContent" :key="index">
-              {{ paragraph }}
-            </p>
-          </div>
-        </section>
-      </article>
-    </div>
+      <figure class="sermon-thumbnail"><img :src="thumbnailSource" :alt="localizedTitle" @error="useDefaultImage" /></figure>
 
-    <!-- Loading State -->
-    <div v-else-if="isLoading" class="glass-card loading-card">
-      <div class="spinner"></div>
-      <p>말씀을 불러오고 있습니다...</p>
-    </div>
+      <section class="sermon-information">
+        <div><span>{{ language === 'mn' ? 'Номлогч' : '설교자' }}</span><strong>{{ localizedSpeaker }}</strong></div>
+        <div><span>{{ language === 'mn' ? 'Библийн эшлэл' : '성경 본문' }}</span><strong>{{ localizedPassage }}</strong></div>
+      </section>
 
-    <!-- Error State -->
-    <div v-else class="glass-card error-card">
-      <p>설교 내용을 찾을 수 없거나 불러오는 데 실패했습니다.</p>
-      <nuxt-link to="/sermons" class="btn btn-secondary">목록으로</nuxt-link>
-    </div>
-  </div>
+      <div v-if="sermon.videoUrl" class="video-section">
+        <iframe :src="embedUrl(sermon.videoUrl)" title="Sermon Video Player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+
+      <section class="sermon-body">
+        <div class="body-heading"><span></span><h2>{{ language === 'mn' ? 'Номлолын агуулга' : '말씀 본문' }}</h2><span></span></div>
+        <div class="rich-content" v-html="resolvedContent"></div>
+      </section>
+    </template>
+
+    <div v-else-if="isLoading" class="loading-state"><span class="spinner"></span><p>{{ language === 'mn' ? 'Номлолыг ачаалж байна.' : '말씀을 불러오고 있습니다.' }}</p></div>
+    <div v-else class="loading-state"><p>{{ language === 'mn' ? 'Номлол олдсонгүй.' : '말씀 내용을 찾을 수 없습니다.' }}</p></div>
+  </article>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { doc, getDoc } from 'firebase/firestore'
 
 const route = useRoute()
+const { language } = useLanguage()
+const { isAdmin } = useAuth()
 const { $firebaseDb } = useNuxtApp()
-
+const { getImage, resolveRichTextImages } = useFirestoreImages()
+const defaultImage = '/images/sermon-default-v1.png'
 const sermon = ref<any>(null)
 const isLoading = ref(true)
+const thumbnailSource = ref(defaultImage)
+const resolvedContent = ref('')
 
-const fetchSermonDetails = async () => {
-  isLoading.value = true
-  if (!$firebaseDb) {
-    isLoading.value = false
-    return
-  }
-  const sermonId = route.params.id as string
-  try {
-    const docRef = doc($firebaseDb, 'sermons', sermonId)
-    const snap = await getDoc(docRef)
-    if (snap.exists()) {
-      sermon.value = snap.data()
-    }
-  } catch (err) {
-    console.error('Error fetching sermon detail:', err)
-  } finally {
-    isLoading.value = false
-  }
+const localizedTitle = computed(() => language.value === 'mn' ? (sermon.value?.titleMn || sermon.value?.titleKo || sermon.value?.title) : (sermon.value?.titleKo || sermon.value?.title || sermon.value?.titleMn))
+const localizedCategory = computed(() => language.value === 'mn' ? (sermon.value?.categoryMn || sermon.value?.categoryKo || sermon.value?.category || 'Ням гарагийн мөргөл') : (sermon.value?.categoryKo || sermon.value?.category || sermon.value?.categoryMn || '주일예배'))
+const localizedSpeaker = computed(() => language.value === 'mn' ? (sermon.value?.speakerMn || sermon.value?.speakerKo || sermon.value?.speaker || '-') : (sermon.value?.speakerKo || sermon.value?.speaker || sermon.value?.speakerMn || '-'))
+const localizedPassage = computed(() => language.value === 'mn' ? (sermon.value?.passageMn || sermon.value?.passageKo || sermon.value?.biblePassage || '-') : (sermon.value?.passageKo || sermon.value?.biblePassage || sermon.value?.passageMn || '-'))
+const localizedRawContent = computed(() => language.value === 'mn' ? (sermon.value?.contentMn || sermon.value?.contentKo || sermon.value?.content || '') : (sermon.value?.contentKo || sermon.value?.content || sermon.value?.contentMn || ''))
+
+const legacyToHtml = (content: string) => {
+  if (/<[a-z][\s\S]*>/i.test(content)) return content
+  const container = document.createElement('div')
+  return content.split('\n').filter(Boolean).map(paragraph => { container.textContent = paragraph; return `<p>${container.innerHTML}</p>` }).join('')
 }
-
-onMounted(() => {
-  fetchSermonDetails()
-})
-
-const formattedContent = computed(() => {
-  if (!sermon.value?.content) return []
-  // Split paragraphs by newline character
-  return sermon.value.content.split('\n').filter((p: string) => p.trim() !== '')
-})
-
+const renderContent = async () => { resolvedContent.value = await resolveRichTextImages(legacyToHtml(localizedRawContent.value)) }
+const formatDate = (value: string) => value ? new Date(value).toLocaleDateString(language.value === 'mn' ? 'mn-MN' : 'ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
+const useDefaultImage = (event: Event) => { (event.currentTarget as HTMLImageElement).src = defaultImage }
 const embedUrl = (url: string) => {
-  if (!url) return ''
-  // Convert standard watch links to embed links if necessary
-  if (url.includes('youtube.com/watch?v=')) {
-    const videoId = url.split('v=')[1]?.split('&')[0]
-    return `https://www.youtube.com/embed/${videoId}`
-  } else if (url.includes('youtu.be/')) {
-    const videoId = url.split('youtu.be/')[1]?.split('?')[0]
-    return `https://www.youtube.com/embed/${videoId}`
-  }
+  if (url.includes('youtube.com/watch?v=')) return `https://www.youtube.com/embed/${url.split('v=')[1]?.split('&')[0]}`
+  if (url.includes('youtu.be/')) return `https://www.youtube.com/embed/${url.split('youtu.be/')[1]?.split('?')[0]}`
   return url
 }
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 주일 설교`
-}
+onMounted(async () => {
+  if (!$firebaseDb) { isLoading.value = false; return }
+  try {
+    const snapshot = await getDoc(doc($firebaseDb, 'sermons', String(route.params.id)))
+      if (!snapshot.exists()) return
+      sermon.value = { id: snapshot.id, ...snapshot.data() }
+      if (sermon.value.isHidden === true && !isAdmin.value) {
+        await navigateTo('/sermons', { replace: true })
+        return
+      }
+    if (sermon.value.thumbnailImageId) thumbnailSource.value = await getImage(sermon.value.thumbnailImageId) || defaultImage
+    else thumbnailSource.value = sermon.value.thumbnailUrl || defaultImage
+    await renderContent()
+  } finally { isLoading.value = false }
+})
+watch(language, renderContent)
 </script>
 
 <style lang="scss" scoped>
-
-.sermon-detail-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.navigation-actions {
-  .back-link {
-    color: $text-secondary;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: $transition-smooth;
-
-    &:hover {
-      color: $primary;
-      transform: translateX(-4px);
-    }
-  }
-}
-
-.detail-card {
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-
-  @media (max-width: 768px) {
-    padding: 24px;
-    gap: 24px;
-  }
-}
-
-.detail-header {
-  border-bottom: 1px solid $border-color;
-  padding-bottom: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.detail-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: $text-secondary;
-  font-weight: 500;
-
-  .divider {
-    color: $text-muted;
-  }
-}
-
-.detail-title {
-  font-size: 1.85rem;
-  color: $text-primary;
-  line-height: 1.3;
-  letter-spacing: -0.02em;
-
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
-}
-
-.detail-passage {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(233, 196, 106, 0.06);
-  border: 1px solid rgba(233, 196, 106, 0.15);
-  color: $text-primary;
-  padding: 8px 16px;
-  border-radius: $radius-sm;
-  font-size: 0.95rem;
-  width: fit-content;
-
-  .bible-icon {
-    width: 18px;
-    height: 18px;
-    color: $primary;
-  }
-
-  .passage-label {
-    color: $text-secondary;
-    font-weight: 500;
-  }
-
-  .passage-text {
-    color: $primary;
-    font-weight: 600;
-  }
-}
-
-.video-section {
-  width: 100%;
-}
-
-.video-ratio-box {
-  position: relative;
-  width: 100%;
-  padding-top: 56.25%; /* 16:9 Aspect Ratio */
-  background: #000;
-  border-radius: $radius-sm;
-  overflow: hidden;
-  box-shadow: $shadow-premium;
-
-  iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.detail-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  h2 {
-    font-size: 1.25rem;
-    color: $primary;
-    border-left: 3px solid $primary;
-    padding-left: 10px;
-    line-height: 1.2;
-  }
-}
-
-.sermon-content {
-  font-size: 1rem;
-  color: $text-secondary;
-  line-height: 1.8;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  white-space: pre-line;
-}
-
-.loading-card, .error-card {
-  text-align: center;
-  padding: 60px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  color: $text-muted;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  border-top-color: $primary;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+.sermon-detail-page { width: min(1120px, calc(100% - 40px)); min-height: calc(100vh - 76px); margin: 0 auto; padding: 52px 0 110px; }
+.back-link { display: inline-block; margin-bottom: 34px; font-size: 13px; font-weight: 800; }
+.detail-header { padding-bottom: 26px; border-bottom: 2px solid #354c42; }
+.detail-category { color: $mn-blue; font-size: 13px; font-weight: 800; letter-spacing: .08em; }
+.detail-header h1 { max-width: 960px; margin: 10px 0 14px; font-size: clamp(38px, 5.3vw, 58px); line-height: 1.28; }
+.detail-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; color: #78857e; font-size: 13px; }
+.detail-meta i { width: 3px; height: 3px; background: #9ba69f; border-radius: 50%; }
+.sermon-thumbnail { width: min(960px, 100%); margin: 42px auto 0; text-align: center; }
+.sermon-thumbnail img { max-width: 100%; max-height: 760px; display: block; margin: 0 auto; object-fit: contain; }
+.sermon-information { width: min(900px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 34px auto 0; background: #dce5df; border: 1px solid #dce5df; }
+.sermon-information div { display: flex; flex-direction: column; gap: 5px; padding: 18px 20px; background: #f7f9f8; }
+.sermon-information span { color: #728078; font-size: 13px; }
+.sermon-information strong { color: #294138; font-size: 18px; }
+.video-section { position: relative; width: min(960px, 100%); margin: 36px auto 0; padding-top: 56.25%; overflow: hidden; background: #17231e; }
+.video-section iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.sermon-body { width: min(940px, 100%); margin: 62px auto 0; }
+.body-heading { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px; margin-bottom: 36px; }
+.body-heading span { height: 1px; background: #cfdad4; }
+.body-heading h2 { font-size: 28px; }
+.rich-content { padding: 34px; color: #303f38; border: 1px solid #d6dfda; font-size: 18px; line-height: 1.95; }
+.rich-content :deep(p) { margin: 0 0 20px; }
+.rich-content :deep(h2) { margin: 38px 0 15px; font-size: 30px; }
+.rich-content :deep(h3) { margin: 30px 0 12px; font-size: 24px; }
+.rich-content :deep(ul), .rich-content :deep(ol) { margin: 18px 0; padding-left: 30px; }
+.rich-content :deep(blockquote) { margin: 28px 0; padding: 18px 22px; color: #4c6258; background: #f1f6f3; border-left: 4px solid $mn-blue; }
+.rich-content :deep(img) { max-width: 100%; height: auto; display: block; margin: 36px auto; }
+.rich-content :deep(a) { text-decoration: underline; text-underline-offset: 3px; }
+.loading-state { min-height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: $text-muted; }
+@media(max-width:640px) { .sermon-detail-page { width: calc(100% - 28px); padding-top: 34px; } .sermon-thumbnail { margin-top: 28px; } .sermon-information { grid-template-columns: 1fr; } .sermon-body { margin-top: 42px; } .rich-content { padding: 22px 14px; } }
 </style>
