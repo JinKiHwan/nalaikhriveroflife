@@ -32,6 +32,7 @@ const messages = {
     'admin.memberManagement': '회원 관리',
     'admin.postManagement': '게시글 관리',
     'admin.sermonCategories': '예배 구분 관리',
+    'admin.heroManagement': '메인 비주얼 관리',
     'admin.homepage': '홈페이지',
     'admin.title': '회원 운영툴',
     'admin.subtitle': '가입 요청을 처리하고 현재 회원의 권한을 관리합니다.',
@@ -71,6 +72,8 @@ const messages = {
     'admin.noPosts': '등록된 게시글이 없습니다.',
     'admin.sermonCategoriesTitle': '예배 구분 관리',
     'admin.sermonCategoriesSubtitle': '말씀 작성 시 선택할 예배 구분을 한국어와 몽골어로 함께 관리합니다.',
+    'admin.heroTitle': '메인 비주얼 관리',
+    'admin.heroSubtitle': '메인 화면의 몽골어·한국어 말씀과 구절 표기, 배경 이미지를 관리합니다.',
     'home.dailyWord': '오늘의 말씀',
     'home.verseMain': '“내가 주는 물을 마시는 자는 영원히 목마르지 아니하리니\n내가 주는 물은 그 속에서 영생하도록 솟아나는 샘물이 되리라.”',
     'home.verseSecondary': 'Харин миний өгөх усаас уух хүн хэзээ ч цангахгүй.\nХарин миний өгөх ус тэр хүний дотор мөнх амьдрал уруу оргилох булгийн ус болно.',
@@ -175,6 +178,7 @@ const messages = {
     'admin.memberManagement': 'Гишүүдийн удирдлага',
     'admin.postManagement': 'Нийтлэлийн удирдлага',
     'admin.sermonCategories': 'Мөргөлийн төрөл',
+    'admin.heroManagement': 'Нүүр зураг удирдах',
     'admin.homepage': 'Нүүр хуудас',
     'admin.title': 'Гишүүдийн удирдлага',
     'admin.subtitle': 'Бүртгэлийн хүсэлтийг шийдвэрлэж, гишүүдийн эрхийг удирдана.',
@@ -214,6 +218,8 @@ const messages = {
     'admin.noPosts': 'Бүртгэгдсэн нийтлэл алга байна.',
     'admin.sermonCategoriesTitle': 'Мөргөлийн төрөл удирдах',
     'admin.sermonCategoriesSubtitle': 'Номлол бичихэд сонгох мөргөлийн төрлийг солонгос, монгол хэлээр хамт удирдана.',
+    'admin.heroTitle': 'Нүүр зургийн удирдлага',
+    'admin.heroSubtitle': 'Нүүр хуудасны монгол, солонгос эшлэл, эшлэлийн тэмдэглэгээ болон дэвсгэр зургийг удирдана.',
     'home.dailyWord': 'Өнөөдрийн эшлэл',
     'home.verseMain': '“Харин Миний өгөх уснаас уух хүн хэзээ ч цангахгүй.\nМиний өгөх ус түүнд мөнх амь өөд оргилох булгийн ус болно.”',
     'home.verseSecondary': '내가 주는 물을 마시는 자는 영원히 목마르지 아니하리니\n내가 주는 물은 그 속에서 영생하도록 솟아나는 샘물이 되리라.',
@@ -293,7 +299,7 @@ type TranslationKey = keyof typeof messages.ko
 
 export const useLanguage = () => {
   const language = useCookie<SiteLanguage>('site-language', {
-    default: () => 'ko',
+    default: () => 'mn',
     sameSite: 'lax',
   })
 

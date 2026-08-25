@@ -30,6 +30,12 @@
             </svg>
             <span>{{ t('admin.sermonCategories') }}</span>
           </nuxt-link>
+          <nuxt-link to="/admin/hero" class="navigation-item" exact-active-class="active">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 5h16v14H4V5zM4 15l4-4 3 3 3-3 6 6M16.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ t('admin.heroManagement') }}</span>
+          </nuxt-link>
         </nav>
       </div>
 

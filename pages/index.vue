@@ -2,15 +2,15 @@
   <div class="home-page">
     <section class="hero-section">
       <div class="hero-media" aria-hidden="true">
-        <img src="/images/hero-steppe-river-v1.png" alt="" />
+        <img :src="heroImage" alt="" @error="useDefaultHeroImage" />
       </div>
       <div class="hero-shade"></div>
       <div class="hero-inner">
         <div :key="language" class="hero-copy">
-          <h1 class="verse-main" lang="ko">{{ heroVerse.ko }}</h1>
+          <h1 class="verse-main" :lang="language">{{ heroVerse.primary }}</h1>
           <span class="verse-divider" aria-hidden="true"></span>
-          <p class="verse-translation" lang="mn">{{ heroVerse.mn }}</p>
-          <p class="verse-reference">요한복음 4:14 <span>·</span> Иохан 4:14</p>
+          <p class="verse-translation" :lang="language === 'mn' ? 'ko' : 'mn'">{{ heroVerse.secondary }}</p>
+          <p class="verse-reference">{{ heroReference.primary }} <span>·</span> {{ heroReference.secondary }}</p>
         </div>
       </div>
     </section>
@@ -124,6 +124,8 @@ import { richTextExcerpt } from '~/utils/richText'
 const { language, t } = useLanguage()
 const { $firebaseDb } = useNuxtApp()
 const { getImage } = useFirestoreImages()
+const { heroSettings, loadHeroSettings } = useHomeHeroSettings()
+const defaultHeroImage = '/images/hero-steppe-river-v1.png'
 const defaultSermonImage = '/images/sermon-default-v1.png'
 const defaultNewsImage = '/images/bg_04.webp'
 const defaultEventImage = '/images/bg_05.webp'
@@ -132,6 +134,7 @@ const homepageNews = ref<any[]>([])
 const homepageSermons = ref<any[]>([])
 const homepageNotices = ref<any[]>([])
 const homepageEvents = ref<any[]>([])
+const heroImage = ref(defaultHeroImage)
 
 const localized = (item: any, field: string) => {
   const korean = item[`${field}Ko`] || item[field] || item[`${field}Mn`] || ''
@@ -203,9 +206,25 @@ const scrollEvents = (direction: -1 | 1) => {
   track.scrollBy({ left: distance * direction, behavior: 'smooth' })
 }
 
-const heroVerse = computed(() => language.value === 'ko'
-  ? { ko: t('home.verseMain'), mn: t('home.verseSecondary') }
-  : { ko: t('home.verseSecondary'), mn: t('home.verseMain') })
+const heroVerse = computed(() => language.value === 'mn'
+  ? { primary: heroSettings.value.verseMn, secondary: heroSettings.value.verseKo }
+  : { primary: heroSettings.value.verseKo, secondary: heroSettings.value.verseMn })
+
+const heroReference = computed(() => language.value === 'mn'
+  ? { primary: heroSettings.value.referenceMn, secondary: heroSettings.value.referenceKo }
+  : { primary: heroSettings.value.referenceKo, secondary: heroSettings.value.referenceMn })
+
+const fetchHeroContent = async () => {
+  try {
+    await loadHeroSettings(true)
+    heroImage.value = heroSettings.value.imageId ? (await getImage(heroSettings.value.imageId) || defaultHeroImage) : defaultHeroImage
+  } catch (error) {
+    console.error('Failed to load hero settings:', error)
+    heroImage.value = defaultHeroImage
+  }
+}
+
+const useDefaultHeroImage = (event: Event) => { (event.currentTarget as HTMLImageElement).src = defaultHeroImage }
 
 const withImage = async (collectionName: string, item: any, fallback = '') => ({
   ...item,
@@ -237,7 +256,7 @@ const fetchHomepageContent = async () => {
   }
 }
 
-onMounted(fetchHomepageContent)
+onMounted(() => { void Promise.all([fetchHomepageContent(), fetchHeroContent()]) })
 </script>
 
 <style lang="scss" scoped>

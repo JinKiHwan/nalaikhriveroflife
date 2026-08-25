@@ -6,13 +6,13 @@
         <div class="brand-logo-wrap">
           <div class="brand-logo-mark">✝</div>
           <div class="brand-logo-text">
-            <span class="brand-name">날라흐 생명수 교회</span>
+            <span class="brand-name">{{ t('church.fullName') }}</span>
             <span class="brand-sub">River of Life Church</span>
           </div>
         </div>
         <blockquote class="brand-verse">
-          <p>"내가 주는 물을 마시는 자는 영원히 목마르지 아니하리니"</p>
-          <cite>요한복음 4:14</cite>
+          <p>{{ t('home.verseMain') }}</p>
+          <cite>{{ t('home.verseRef') }}</cite>
         </blockquote>
       </div>
       <!-- 몽골 국기 세로 바 -->
@@ -30,10 +30,17 @@
   </div>
 </template>
 
+<script setup lang="ts">
+const { t } = useLanguage()
+</script>
+
 <style lang="scss" scoped>
 .auth-layout {
   display: flex;
+  min-width: 0;
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
   background: $bg-main;
 }
 
@@ -113,6 +120,7 @@
     color: $text-primary;
     font-style: italic;
     line-height: 1.7;
+    white-space: pre-line;
     margin-bottom: 8px;
   }
 
@@ -139,11 +147,17 @@
 
 // 우측 폼 영역
 .auth-form-area {
+  width: 100%;
+  min-width: 0;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
   background: $bg-main;
+}
+
+@media (max-width: 768px) {
+  .auth-form-area { align-items: flex-start; padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
 }
 </style>

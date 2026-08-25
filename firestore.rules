@@ -154,9 +154,22 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read: if approved();
       allow create, update: if operator()
-        && settingId == 'sermon_categories'
-        && request.resource.data.items is list;
-      allow delete: if master() && settingId == 'sermon_categories';
+        && (
+          (
+            settingId == 'sermon_categories'
+            && request.resource.data.items is list
+          )
+          || (
+            settingId == 'home_hero'
+            && request.resource.data.verseKo is string
+            && request.resource.data.verseMn is string
+            && request.resource.data.referenceKo is string
+            && request.resource.data.referenceMn is string
+            && request.resource.data.imageId is string
+          )
+        );
+      allow delete: if master()
+        && (settingId == 'sermon_categories' || settingId == 'home_hero');
     }
 
     match /teachers_posts/{postId} {
