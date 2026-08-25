@@ -20,7 +20,7 @@
     </section>
 
     <div v-if="posts.length" class="thumbnail-board">
-      <article v-for="post in posts" :key="post.id" class="thumbnail-card">
+      <article v-for="post in pagedPosts" :key="post.id" class="thumbnail-card">
         <nuxt-link :to="`/events/${post.id}`" class="card-link">
           <div class="thumbnail"><img :src="post.thumbnailUrl || defaultImage" alt="" @error="useDefaultImage" /></div>
           <div class="card-copy">
@@ -36,6 +36,7 @@
       </article>
     </div>
     <div v-else class="empty-board">현재 진행중인 행사가 없습니다</div>
+    <PaginationNav v-model="currentPage" :total-pages="totalPages" />
   </div>
 </template>
 
@@ -53,6 +54,7 @@ const editingPost = ref<any | null>(null)
 const requestedEditHandled = ref(false)
 const emptyForm = () => ({ category: 'CHURCH EVENT', title: '', date: new Date().toISOString().slice(0,10), thumbnailUrl: '', content: '' })
 const form = ref(emptyForm())
+const { currentPage, totalPages, pagedItems: pagedPosts, resetPage } = useClientPagination(posts, 9)
 
 const fetchPosts = async () => {
   if (!$firebaseDb) return
@@ -107,6 +109,7 @@ const createPost = async () => {
     form.value = emptyForm()
     showForm.value = false
     await fetchPosts()
+    resetPage()
   } finally { isSubmitting.value = false }
 }
 const deletePost = async (post: any) => {

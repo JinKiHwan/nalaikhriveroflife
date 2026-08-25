@@ -94,7 +94,7 @@
     <div class="posts-list">
       <div v-if="posts.length > 0" class="post-grid">
         <div 
-          v-for="p in posts" 
+          v-for="p in pagedPosts"
           :key="p.id" 
           class="glass-card hoverable post-card"
           @click="navigateToDetail(p.id)"
@@ -130,6 +130,7 @@
       <div v-else class="glass-card empty-card">
         <p>선생님 모임방에 작성된 소식이나 자료가 없습니다.</p>
       </div>
+      <PaginationNav v-model="currentPage" :total-pages="totalPages" />
     </div>
   </div>
 </template>
@@ -145,6 +146,7 @@ const { $firebaseDb, $firebaseStorage } = useNuxtApp()
 const currentUid = computed(() => currentUser.value?.uid || '')
 
 const posts = ref<any[]>([])
+const { currentPage, totalPages, pagedItems: pagedPosts, resetPage } = useClientPagination(posts, 9)
 const showCreateForm = ref(false)
 const isSubmitting = ref(false)
 const isUploading = ref(false)
@@ -257,6 +259,7 @@ const handleCreatePost = async () => {
     clearFile()
     showCreateForm.value = false
     await fetchPosts()
+    resetPage()
   } catch (err) {
     console.error('Error creating post:', err)
     alert('게시글 등록에 실패했습니다.')

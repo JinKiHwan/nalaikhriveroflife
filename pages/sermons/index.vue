@@ -57,7 +57,7 @@
 
     <div v-if="sermons.length" class="sermon-board-list">
       <div class="sermon-board-head"><span>{{ language === 'mn' ? 'Ангилал' : '카테고리' }}</span><span>{{ language === 'mn' ? 'Гарчиг' : '제목' }}</span><span>{{ language === 'mn' ? 'Огноо' : '날짜' }}</span><span></span></div>
-      <div v-for="sermon in sermons" :key="sermon.id" class="sermon-board-row" @click="navigateTo(`/sermons/${sermon.id}`)">
+      <div v-for="sermon in pagedSermons" :key="sermon.id" class="sermon-board-row" @click="navigateTo(`/sermons/${sermon.id}`)">
         <span class="board-category">{{ localizedCategory(sermon) }}</span>
         <strong>{{ localizedTitle(sermon) }}</strong>
         <time>{{ formatDate(sermon.date) }}</time>
@@ -68,6 +68,7 @@
       </div>
     </div>
     <div v-else class="empty-board">{{ t('sermons.empty') }}</div>
+    <PaginationNav v-model="currentPage" :total-pages="totalPages" />
   </div>
 </template>
 
@@ -102,6 +103,7 @@ const emptyForm = () => ({
   titleKo: '', titleMn: '', speakerKo: '', speakerMn: '', passageKo: '', passageMn: '', contentKo: '', contentMn: '',
 })
 const form = ref(emptyForm())
+const { currentPage, totalPages, pagedItems: pagedSermons, resetPage } = useClientPagination(sermons, 10)
 
 const categoryOptions = computed(() => {
   const configured = categories.value.map(item => ({ ...item }))
@@ -269,6 +271,7 @@ const createSermon = async () => {
     showForm.value = false
     resetForm()
     await fetchSermons()
+    resetPage()
   } catch (error: any) {
     formError.value = error.message || '생명의 말씀을 등록하지 못했습니다.'
   } finally { isSubmitting.value = false }

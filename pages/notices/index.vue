@@ -64,7 +64,7 @@
     <div class="notices-list">
       <div v-if="displayNotices.length" class="notice-board-list">
         <div class="notice-board-head"><span>{{ language === 'mn' ? 'Ангилал' : '카테고리' }}</span><span>{{ language === 'mn' ? 'Гарчиг' : '제목' }}</span><span>{{ language === 'mn' ? 'Огноо' : '날짜' }}</span><span></span></div>
-        <div v-for="n in displayNotices" :key="n.id" :class="['notice-board-row', { pinned: n.isPinned }]" @click="navigateToDetail(n.id)">
+        <div v-for="n in pagedNotices" :key="n.id" :class="['notice-board-row', { pinned: n.isPinned }]" @click="navigateToDetail(n.id)">
           <span class="board-category">{{ n.isPinned ? t('notices.pinned') : (language === 'mn' ? 'Зарлал' : '공지사항') }}</span>
           <strong>{{ localizedTitle(n) }}</strong>
           <time>{{ formatDate(n.createdAt) }}</time>
@@ -79,6 +79,7 @@
       <div v-else class="glass-card empty-card">
         <p>{{ t('notices.empty') }}</p>
       </div>
+      <PaginationNav v-model="currentPage" :total-pages="totalPages" />
     </div>
   </div>
 </template>
@@ -134,6 +135,7 @@ const regularNotices = computed(() => {
 })
 
 const displayNotices = computed(() => [...pinnedNotices.value, ...regularNotices.value])
+const { currentPage, totalPages, pagedItems: pagedNotices, resetPage } = useClientPagination(displayNotices, 10)
 
 onMounted(fetchNotices)
 
@@ -227,6 +229,7 @@ const handleCreateNotice = async () => {
     showCreateForm.value = false
     resetCreateForm()
     await fetchNotices()
+    resetPage()
   } catch (err: any) {
     console.error('Error adding notice:', err)
     formError.value = err.message || (language.value === 'mn' ? 'Зарлал нийтэлж чадсангүй.' : '공지 작성에 실패했습니다.')

@@ -43,7 +43,7 @@
     </section>
 
     <div v-if="posts.length" class="thumbnail-board">
-      <article v-for="post in posts" :key="post.id" class="thumbnail-card">
+      <article v-for="post in pagedPosts" :key="post.id" class="thumbnail-card">
         <nuxt-link :to="`/news/${post.id}`" class="card-link">
           <div class="thumbnail"><img :src="thumbnailSource(post)" :alt="localizedTitle(post)" @error="useDefaultImage" /></div>
           <div class="card-copy">
@@ -59,6 +59,7 @@
       </article>
     </div>
     <div v-else class="empty-board">{{ language === 'mn' ? 'Бүртгэгдсэн чуулганы мэдээ алга байна.' : '등록된 교회 소식이 없습니다.' }}</div>
+    <PaginationNav v-model="currentPage" :total-pages="totalPages" />
   </div>
 </template>
 
@@ -92,6 +93,7 @@ const emptyForm = () => ({
   date: new Date().toISOString().slice(0, 10), titleKo: '', titleMn: '', contentKo: '', contentMn: '',
 })
 const form = ref(emptyForm())
+const { currentPage, totalPages, pagedItems: pagedPosts, resetPage } = useClientPagination(posts, 9)
 
 const fetchPosts = async () => {
   if (!$firebaseDb) return
@@ -233,6 +235,7 @@ const createPost = async () => {
     showForm.value = false
     resetForm()
     await fetchPosts()
+    resetPage()
   } catch (error: any) {
     formError.value = error.message || '교회 소식을 등록하지 못했습니다.'
   } finally { isSubmitting.value = false }

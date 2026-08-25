@@ -42,7 +42,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="post in filteredPosts" :key="`${post.collection}-${post.id}`" :class="{ 'is-hidden': post.isHidden }">
+            <tr v-for="post in pagedPosts" :key="`${post.collection}-${post.id}`" :class="{ 'is-hidden': post.isHidden }">
               <td><span class="type-badge">{{ typeLabel(post.collection) }}</span></td>
               <td>
                 <nuxt-link :to="postLink(post)" class="post-title">{{ localizedTitle(post) }}</nuxt-link>
@@ -69,6 +69,7 @@
           </tbody>
         </table>
       </div>
+      <PaginationNav v-model="currentPage" :total-pages="totalPages" />
     </section>
   </div>
 </template>
@@ -101,6 +102,7 @@ const postKey = (post: any) => `${post.collection}:${post.id}`
 const isProcessing = (post: any) => visibilityKey.value === postKey(post) || deletingKey.value === postKey(post)
 const timestamp = (post: any) => Date.parse(post.date || post.createdAt || '') || 0
 const filteredPosts = computed(() => selectedType.value === 'all' ? posts.value : posts.value.filter(post => post.collection === selectedType.value))
+const { currentPage, totalPages, pagedItems: pagedPosts, resetPage } = useClientPagination(filteredPosts, 15)
 const visibleCount = computed(() => posts.value.filter(post => post.isHidden !== true).length)
 const hiddenCount = computed(() => posts.value.filter(post => post.isHidden === true).length)
 const typeCount = (collectionName: string) => posts.value.filter(post => post.collection === collectionName).length
@@ -194,6 +196,8 @@ const deletePost = async (post: any) => {
     deletingKey.value = ''
   }
 }
+
+watch(selectedType, resetPage)
 
 onMounted(fetchPosts)
 </script>
