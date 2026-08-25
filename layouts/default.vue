@@ -56,8 +56,8 @@
             </transition>
           </div>
 
-          <nuxt-link v-if="!isAuthenticated" to="/login" class="header-auth">{{ t('auth.login') }}</nuxt-link>
-          <button v-else type="button" class="header-auth" @click="handleLogout">{{ t('auth.logout') }}</button>
+          <nuxt-link v-if="!isAuthenticated" to="/login" class="header-auth header-auth--login">{{ t('auth.login') }}</nuxt-link>
+          <button v-else type="button" class="header-auth header-auth--logout" @click="handleLogout">{{ t('auth.logout') }}</button>
 
           <nuxt-link v-if="isAdmin" to="/admin" class="admin-redirect" :aria-label="t('admin.tool')">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -226,7 +226,7 @@ const handleLogout = async () => {
   display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
   align-items: center; gap: 28px;
 }
-.brand { width: fit-content; display: inline-flex; align-items: center; gap: 11px; color: inherit; }
+.brand { min-width: 0; width: fit-content; display: inline-flex; align-items: center; gap: 11px; color: inherit; }
 .brand:hover { color: inherit; }
 .brand-mark {
   width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center;
@@ -248,7 +248,7 @@ const handleLogout = async () => {
 .desktop-nav a:hover, .desktop-nav a.active { color: inherit; }
 .desktop-nav a:hover::after, .desktop-nav a.active::after { left: 0; right: 0; }
 
-.header-tools { justify-self: end; display: flex; align-items: center; gap: 12px; }
+.header-tools { min-width: 0; justify-self: end; display: flex; align-items: center; gap: 12px; }
 .header-auth {
   min-width: 76px; height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 0 15px;
   color: #fff; background: $mn-blue; border: 1px solid $mn-blue; border-radius: 999px; cursor: pointer;
@@ -298,7 +298,7 @@ const handleLogout = async () => {
 .language-menu-enter-active,.language-menu-leave-active { transition: opacity .16s ease, transform .16s ease; transform-origin: top; }
 .language-menu-enter-from,.language-menu-leave-to { opacity: 0; transform: translateY(-5px) scale(.98); }
 
-.menu-toggle { position: relative; width: 38px; height: 38px; display: none; padding: 0; color: inherit; background: transparent; border: 0; cursor: pointer; }
+.menu-toggle { position: relative; width: 38px; height: 38px; flex: 0 0 38px; display: none; padding: 0; color: inherit; background: transparent; border: 0; cursor: pointer; }
 .menu-toggle span { position: absolute; left: 9px; top: 50%; width: 20px; height: 1.5px; display: block; margin: 0; background: currentColor; transform-origin: center; transition: transform .22s ease, opacity .22s ease; }
 .menu-toggle span:nth-child(1) { transform: translateY(-6px); }
 .menu-toggle span:nth-child(2) { transform: translateY(-.75px); }
@@ -366,12 +366,14 @@ const handleLogout = async () => {
 @media (max-width: 768px) {
   .site-header { height: 64px; }
   .header-inner { width: calc(100% - 28px); gap: 10px; }
+  .header-tools { gap: 8px; }
   .brand { gap: 8px; }
   .brand-mark { width: 32px; height: 32px; flex-basis: 32px; }
   .brand-copy strong { max-width: 145px; overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
   .brand-copy small { display: none; }
-  .language-selector { width: 138px; height: 36px; }
+  .language-selector { width: clamp(116px, 32vw, 138px); height: 36px; }
   .header-auth { min-width: 68px; height: 36px; padding: 0 12px; }
+  .header-auth--logout { display: none; }
   .admin-redirect { display: none; }
   .mobile-menu { inset: 64px 0 0; }
   .app-shell:not(.home-mode) .site-main { padding-top: 64px; }
