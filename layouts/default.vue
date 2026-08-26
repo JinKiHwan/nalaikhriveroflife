@@ -231,7 +231,7 @@ const handleLogout = async () => {
 .brand-mark {
   width: 34px; height: 44px; flex: 0 0 34px; display: grid; place-items: center;
 }
-.brand-mark img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.brand-mark img { width: 100%; height: 100%; display: block; object-fit: contain; transform: translateY(-3px); }
 .brand-copy { display: flex; flex-direction: column; min-width: 0; }
 .brand-copy strong { font-family: $font-title; font-size: 18px; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; }
 .brand-copy small { margin-top: 2px; color: #78867f; font-size: 13px; font-weight: 700; letter-spacing: .06em; }
