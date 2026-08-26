@@ -24,7 +24,7 @@
 
       <div v-if="isLoading" class="empty-state">{{ language === 'mn' ? 'Уншиж байна...' : '불러오는 중...' }}</div>
       <div v-else class="category-list">
-        <div class="category-head"><span>NO.</span><span>한국어</span><span>Монгол хэл</span><span>{{ language === 'mn' ? 'Цаг' : '예배 시간' }}</span><span></span></div>
+        <div class="category-head"><span>NO.</span><span>한국어</span><span>Монгол хэл</span><span>{{ language === 'mn' ? 'Мөргөлийн цагууд' : '예배 시간표' }}</span><span></span></div>
         <div v-for="(category, index) in draftCategories" :key="category.id" class="category-row">
           <span class="order-number">{{ String(index + 1).padStart(2, '0') }}</span>
           <label>
@@ -35,10 +35,27 @@
             <span class="mobile-label">Монгол хэл</span>
             <input v-model.trim="category.nameMn" class="category-input" placeholder="Жишээ: Ням гарагийн мөргөл" />
           </label>
-          <label>
-            <span class="mobile-label">{{ language === 'mn' ? 'Мөргөлийн цаг' : '예배 시간' }}</span>
-            <input v-model="category.time" type="time" step="300" class="category-input category-time-input" />
-          </label>
+          <div class="schedule-editor">
+            <div v-for="(slot, slotIndex) in category.times" :key="slot.id" class="schedule-row">
+              <label>
+                <span>{{ language === 'mn' ? 'Солонгос ээлж' : '한국어 회차' }}</span>
+                <input v-model.trim="slot.labelKo" class="category-input schedule-label-input" placeholder="예: 1부" />
+              </label>
+              <label>
+                <span>{{ language === 'mn' ? 'Монгол ээлж' : '몽골어 회차' }}</span>
+                <input v-model.trim="slot.labelMn" class="category-input schedule-label-input" placeholder="Жишээ: 1-р мөргөл" />
+              </label>
+              <label>
+                <span>{{ language === 'mn' ? 'Цаг' : '시간' }}</span>
+                <input v-model="slot.time" type="time" step="300" class="category-input category-time-input" />
+              </label>
+              <button type="button" class="remove-time-button" :disabled="category.times.length === 1" :aria-label="language === 'mn' ? 'Цаг устгах' : '시간 삭제'" @click="removeTime(category, slotIndex)">×</button>
+            </div>
+            <div class="schedule-footer">
+              <small>{{ language === 'mn' ? 'Нэг цагтай бол ээлжийн нэрийг хоосон үлдээж болно.' : '한 타임만 있으면 회차명은 비워도 됩니다.' }}</small>
+              <button type="button" class="add-time-button" @click="addTime(category)">＋ {{ language === 'mn' ? 'Цаг нэмэх' : '시간 추가' }}</button>
+            </div>
+          </div>
           <button type="button" class="remove-button" :disabled="draftCategories.length === 1" @click="removeCategory(index)">
             {{ language === 'mn' ? 'Устгах' : '삭제' }}
           </button>
@@ -61,7 +78,13 @@ const isSaving = ref(false)
 const message = ref('')
 const hasError = ref(false)
 
-const cloneCategories = () => categories.value.map(item => ({ ...item }))
+const cloneCategories = () => categories.value.map(item => ({ ...item, times: item.times.map(slot => ({ ...slot })) }))
+const createTimeSlot = () => ({
+  id: `time-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  labelKo: '',
+  labelMn: '',
+  time: '',
+})
 
 const load = async () => {
   isLoading.value = true
@@ -82,9 +105,20 @@ const addCategory = () => {
     id: `worship-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     nameKo: '',
     nameMn: '',
-    time: '',
+    times: [createTimeSlot()],
   })
   nextTick(() => document.querySelector<HTMLInputElement>('.category-row:last-child input')?.focus())
+}
+
+const addTime = (category: SermonCategory) => {
+  category.times.push(createTimeSlot())
+  message.value = ''
+}
+
+const removeTime = (category: SermonCategory, index: number) => {
+  if (category.times.length === 1) return
+  category.times.splice(index, 1)
+  message.value = ''
 }
 
 const removeCategory = (index: number) => {
@@ -96,9 +130,14 @@ const removeCategory = (index: number) => {
 const save = async () => {
   message.value = ''
   hasError.value = false
-  if (draftCategories.value.some(item => !item.nameKo.trim() || !item.nameMn.trim() || !item.time.trim())) {
+  if (draftCategories.value.some(item => !item.nameKo.trim() || !item.nameMn.trim() || !item.times.length || item.times.some(slot => !slot.time.trim()))) {
     hasError.value = true
-    message.value = language.value === 'mn' ? 'Мөргөл бүрийн солонгос, монгол нэр болон цагийг оруулна уу.' : '모든 예배 구분의 한국어·몽골어 명칭과 예배 시간을 입력해 주세요.'
+    message.value = language.value === 'mn' ? 'Мөргөл бүрийн солонгос, монгол нэр болон бүх цагийг оруулна уу.' : '모든 예배 구분의 한국어·몽골어 명칭과 예배 시간을 입력해 주세요.'
+    return
+  }
+  if (draftCategories.value.some(item => item.times.length > 1 && item.times.some(slot => !slot.labelKo.trim() || !slot.labelMn.trim()))) {
+    hasError.value = true
+    message.value = language.value === 'mn' ? 'Олон цагтай мөргөл бүрийн солонгос, монгол ээлжийн нэрийг оруулна уу.' : '예배 시간이 여러 개인 경우 각 타임의 한국어·몽골어 회차명을 입력해 주세요.'
     return
   }
   isSaving.value = true
@@ -133,14 +172,26 @@ onMounted(load)
 .card-heading h2 { margin-bottom: 5px; font-size: 26px; }
 .card-heading p { color: #7b827d; font-size: 13px; }
 .category-list { overflow-x: auto; }
-.category-head, .category-row { min-width: 760px; display: grid; grid-template-columns: 62px minmax(180px,1fr) minmax(180px,1fr) 140px 70px; gap: 14px; align-items: center; }
+.category-head, .category-row { min-width: 1040px; display: grid; grid-template-columns: 56px minmax(170px,.75fr) minmax(190px,.85fr) minmax(500px,2fr) 62px; gap: 12px; align-items: start; }
 .category-head { padding: 0 12px 10px; color: #858b87; font-size: 13px; font-weight: 800; }
-.category-row { min-height: 70px; padding: 12px; border-top: 1px solid #e8ebe9; }
+.category-row { min-height: 112px; padding: 16px 12px; border-top: 1px solid #e8ebe9; }
 .category-row:first-of-type { border-top-color: #d8dedb; }
 .order-number { color: #9a9f9b; font-size: 13px; font-weight: 800; }
 .category-input { width: 100%; height: 44px; padding: 0 13px; color: #303632; background: #fff; border: 1px solid #d5dcd7; border-radius: 5px; font-family: $font-body; font-size: 18px; }
 .category-input:focus { outline: 2px solid rgba(#16815d,.15); border-color: #72aa94; }
 .category-time-input { min-width: 0; font-variant-numeric: tabular-nums; }
+.schedule-editor { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.schedule-row { display: grid; grid-template-columns: minmax(120px,1fr) minmax(140px,1.15fr) 112px 32px; gap: 8px; align-items: end; }
+.schedule-row label { min-width: 0; }
+.schedule-row label > span { display: block; margin-bottom: 4px; color: #858b87; font-size: 11px; font-weight: 800; }
+.schedule-label-input { font-size: 13px; }
+.schedule-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.schedule-footer small { color: #929893; font-size: 11px; }
+.add-time-button { min-height: 34px; flex: 0 0 auto; padding: 0 11px; color: #137352; background: #fff; border: 1px solid #9cc7b7; border-radius: 5px; cursor: pointer; font-family: $font-body; font-size: 12px; font-weight: 800; }
+.add-time-button:hover { color: #fff; background: #16815d; border-color: #16815d; }
+.remove-time-button { width: 32px; height: 32px; color: #9b3e36; background: #fff; border: 1px solid #ddb8b4; border-radius: 5px; cursor: pointer; font-size: 20px; line-height: 1; }
+.remove-time-button:hover:not(:disabled) { color: #fff; background: #9b3e36; border-color: #9b3e36; }
+.remove-time-button:disabled { cursor: not-allowed; opacity: .3; }
 .mobile-label { display: none; }
 .remove-button { height: 34px; color: #9b3e36; background: #fff; border: 1px solid #d9a8a3; border-radius: 5px; cursor: pointer; font-family: $font-body; font-size: 13px; font-weight: 800; }
 .remove-button:hover { color: #fff; background: #9b3e36; border-color: #9b3e36; }
@@ -154,8 +205,12 @@ onMounted(load)
   .category-list { overflow: visible; }
   .category-head { display: none; }
   .category-row { min-width: 0; grid-template-columns: 42px 1fr; gap: 10px; padding: 16px 4px; }
-  .category-row label, .category-row .remove-button { grid-column: 2; }
+  .category-row > label, .category-row > .schedule-editor, .category-row > .remove-button { grid-column: 2; }
   .order-number { grid-row: 1 / span 4; align-self: start; padding-top: 32px; }
+  .schedule-row { grid-template-columns: 1fr 1fr; padding: 12px; background: #f7f9f7; border: 1px solid #e2e7e3; }
+  .schedule-row label:nth-child(3) { grid-column: 1; }
+  .remove-time-button { grid-column: 2; justify-self: end; align-self: end; }
+  .schedule-footer { align-items: flex-start; flex-direction: column; }
   .mobile-label { display: block; margin-bottom: 5px; color: #777e79; font-size: 11px; font-weight: 800; }
   .remove-button { width: 70px; }
 }

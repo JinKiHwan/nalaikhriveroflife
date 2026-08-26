@@ -19,7 +19,15 @@
       <div class="content-shell worship-layout">
         <div class="worship-intro"><h2>{{ t('home.worshipGuide') }}</h2><p>{{ t('church.fullName') }}</p></div>
         <div class="worship-times">
-          <div v-for="item in worshipItems" :key="item.id"><strong>{{ item.name }}</strong><span>{{ item.time }}</span></div>
+          <div v-for="item in worshipItems" :key="item.id" class="worship-time-item">
+            <strong>{{ item.name }}</strong>
+            <ul>
+              <li v-for="slot in item.times" :key="slot.id">
+                <span v-if="slot.label">{{ slot.label }}</span>
+                <time>{{ slot.time }}</time>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>
@@ -138,15 +146,23 @@ const heroImage = ref(defaultHeroImage)
 
 const worshipItems = computed(() => {
   const configured = worshipCategories.value
-    .filter(item => item.time)
-    .map(item => ({ id: item.id, name: language.value === 'mn' ? item.nameMn : item.nameKo, time: item.time }))
+    .filter(item => item.times.length && item.times.every(slot => slot.time))
+    .map(item => ({
+      id: item.id,
+      name: language.value === 'mn' ? item.nameMn : item.nameKo,
+      times: item.times.map(slot => ({
+        id: slot.id,
+        label: language.value === 'mn' ? (slot.labelMn || slot.labelKo) : (slot.labelKo || slot.labelMn),
+        time: slot.time,
+      })),
+    }))
 
   if (configured.length && configured.length === worshipCategories.value.length) return configured
 
   return [
-    { id: 'sunday', name: t('home.worship.sunday'), time: t('home.worship.sundayTime') },
-    { id: 'wednesday', name: t('home.worship.wednesday'), time: t('home.worship.wednesdayTime') },
-    { id: 'dawn', name: t('home.worship.dawn'), time: t('home.worship.dawnTime') },
+    { id: 'sunday', name: t('home.worship.sunday'), times: [{ id: 'sunday-default', label: '', time: t('home.worship.sundayTime') }] },
+    { id: 'wednesday', name: t('home.worship.wednesday'), times: [{ id: 'wednesday-default', label: '', time: t('home.worship.wednesdayTime') }] },
+    { id: 'dawn', name: t('home.worship.dawn'), times: [{ id: 'dawn-default', label: '', time: t('home.worship.dawnTime') }] },
   ]
 })
 
@@ -385,9 +401,12 @@ onMounted(() => { void Promise.all([fetchHomepageContent(), fetchHeroContent(), 
 .worship-intro h2 { margin: 0 0 10px; color: #fff; font-size: clamp(2.05rem,3vw,2.65rem); }
 .worship-intro p { color: rgba(#fff,.62); font-size: 13px; }
 .worship-times { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); }
-.worship-times div { display: flex; flex-direction: column; gap: 7px; padding: 8px 22px; border-left: 1px solid rgba(#fff,.18); }
+.worship-time-item { display: flex; flex-direction: column; gap: 9px; padding: 8px 22px; border-left: 1px solid rgba(#fff,.18); }
 .worship-times strong { font-size: 18px; }
-.worship-times span { color: rgba(#fff,.64); font-size: 13px; }
+.worship-times ul { display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.worship-times li { display: flex; align-items: baseline; gap: 8px; color: rgba(#fff,.68); font-size: 13px; }
+.worship-times li span { min-width: fit-content; color: rgba(#fff,.82); font-weight: 700; }
+.worship-times time { color: inherit; font-variant-numeric: tabular-nums; }
 
 @media (max-width:1100px) {
   .news-grid { grid-template-columns: 1fr 1fr; row-gap: 32px; }
@@ -413,7 +432,7 @@ onMounted(() => { void Promise.all([fetchHomepageContent(), fetchHeroContent(), 
   .sermon-mini-grid { margin-top: 28px; padding-top: 0; }
   .notice-columns,.worship-layout { grid-template-columns: 1fr; gap: 34px; }
   .worship-times { grid-template-columns: 1fr; }
-  .worship-times div { padding: 13px 0; border-left: 0; border-top: 1px solid rgba(#fff,.16); }
+  .worship-time-item { padding: 13px 0; border-left: 0; border-top: 1px solid rgba(#fff,.16); }
 }
 
 @media (max-width:520px) {
