@@ -3,12 +3,13 @@ const blockedTags = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FO
 
 const isSafeLink = (value: string) => /^(https?:\/\/|mailto:|tel:)/i.test(value)
 const isSafeImage = (value: string, allowDataImages: boolean) => /^https:\/\//i.test(value) || (allowDataImages && /^data:image\/(webp|jpeg|png|gif);base64,/i.test(value))
+const normalizeNonBreakingSpaces = (value: string) => value.replace(/&amp;nbsp;|&nbsp;|&#0*160;|&#x0*a0;/gi, '\u00a0')
 
 export const sanitizeRichText = (html: string, allowDataImages = false) => {
   if (!import.meta.client || !html) return html || ''
 
   const template = document.createElement('template')
-  template.innerHTML = html
+  template.innerHTML = normalizeNonBreakingSpaces(html)
 
   const cleanNode = (node: Node) => {
     for (const child of Array.from(node.childNodes)) {
@@ -69,7 +70,7 @@ export const prepareRichTextForSave = (html: string) => {
 
 export const richTextExcerpt = (html: string, maxLength = 180) => {
   if (!html) return ''
-  if (!import.meta.client) return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength)
+  if (!import.meta.client) return normalizeNonBreakingSpaces(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength)
   const container = document.createElement('div')
   container.innerHTML = sanitizeRichText(html)
   const text = (container.textContent || '').replace(/\s+/g, ' ').trim()
