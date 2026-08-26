@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-shell">
+  <div v-if="canRenderAdmin" class="admin-shell">
     <aside class="admin-sidebar">
       <nuxt-link to="/admin" class="admin-brand" :aria-label="t('admin.tool')">
         <span class="admin-brand-mark">†</span>
@@ -79,8 +79,20 @@
 </template>
 
 <script setup lang="ts">
-const { profile, userName, logout } = useAuth()
+const { profile, userName, isAdmin, waitForAuthReady, logout } = useAuth()
 const { language, setLanguage, t } = useLanguage()
+const canRenderAdmin = ref(false)
+
+onBeforeMount(async () => {
+  await waitForAuthReady()
+
+  if (!isAdmin.value) {
+    await navigateTo('/', { replace: true })
+    return
+  }
+
+  canRenderAdmin.value = true
+})
 
 const handleLogout = async () => {
   await logout()
