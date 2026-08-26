@@ -2,7 +2,7 @@
   <div v-if="canRenderAdmin" class="admin-shell">
     <aside class="admin-sidebar">
       <nuxt-link to="/admin" class="admin-brand" :aria-label="t('admin.tool')">
-        <span class="admin-brand-mark">†</span>
+        <img src="/images/church-logo-v1.png" alt="" class="admin-brand-mark" />
         <span class="admin-brand-copy">
           <strong>{{ t('admin.tool') }}</strong>
           <small>NALAKH CHURCH</small>
@@ -134,15 +134,11 @@ const handleLogout = async () => {
 .admin-brand:hover { color: #252825; }
 .admin-brand-mark {
   width: 38px;
-  height: 38px;
+  height: 48px;
   flex: 0 0 38px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: #343834;
-  border-radius: 50%;
-  font-family: Georgia, serif;
-  font-size: 20px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(#31554a,.16));
 }
 .admin-brand-copy { display: flex; flex-direction: column; min-width: 0; }
 .admin-brand-copy strong { color: #252825; font-size: 20px; line-height: 1.25; }

@@ -4,7 +4,7 @@
     <div class="auth-brand">
       <div class="brand-inner">
         <div class="brand-logo-wrap">
-          <div class="brand-logo-mark">✝</div>
+          <img src="/images/church-logo-v1.png" alt="" class="brand-logo-mark" />
           <div class="brand-logo-text">
             <span class="brand-name">{{ t('church.fullName') }}</span>
             <span class="brand-sub">River of Life Church</span>
@@ -76,16 +76,11 @@ const { t } = useLanguage()
 }
 
 .brand-logo-mark {
-  width: 48px;
-  height: 48px;
-  border-radius: $radius-md;
-  background: $mn-blue;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  box-shadow: 0 4px 14px rgba($mn-red, 0.3);
+  width: 58px;
+  height: 72px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 10px rgba(#174c5b,.18));
   flex-shrink: 0;
 }
 

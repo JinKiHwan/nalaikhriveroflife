@@ -3,7 +3,7 @@
     <header class="site-header">
       <div class="header-inner">
         <nuxt-link to="/" class="brand" @click="closeMenu">
-          <span class="brand-mark" aria-hidden="true"><span>†</span></span>
+          <span class="brand-mark" aria-hidden="true"><img src="/images/church-logo-v1.png" alt="" /></span>
           <span class="brand-copy">
             <strong>{{ t('church.name') }}</strong>
             <small>{{ t('church.region') }} · RIVER OF LIFE</small>
@@ -101,7 +101,7 @@
     <footer class="site-footer">
       <div class="footer-inner">
         <nuxt-link to="/" class="footer-brand">
-          <span class="brand-mark" aria-hidden="true"><span>†</span></span>
+          <span class="brand-mark" aria-hidden="true"><img src="/images/church-logo-v1.png" alt="" /></span>
           <span><strong>{{ t('church.fullName') }}</strong><small>NALAIKH · MONGOLIA</small></span>
         </nuxt-link>
         <nav class="footer-nav">
@@ -229,11 +229,9 @@ const handleLogout = async () => {
 .brand { min-width: 0; width: fit-content; display: inline-flex; align-items: center; gap: 11px; color: inherit; }
 .brand:hover { color: inherit; }
 .brand-mark {
-  width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center;
-  color: #fff; background: $mn-blue;
-  border-radius: 50%; box-shadow: 0 6px 18px rgba(#183127, .2);
+  width: 42px; height: 50px; flex: 0 0 42px; display: grid; place-items: center;
 }
-.brand-mark span { font-family: Georgia, serif; font-size: 1.28rem; line-height: 1; transform: translateY(-1px); }
+.brand-mark img { width: 100%; height: 100%; display: block; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(#183127,.18)); }
 .brand-copy { display: flex; flex-direction: column; min-width: 0; }
 .brand-copy strong { font-family: $font-title; font-size: 18px; font-weight: 800; line-height: 1.25; letter-spacing: -.02em; }
 .brand-copy small { margin-top: 2px; color: #78867f; font-size: 13px; font-weight: 700; letter-spacing: .06em; }
@@ -344,7 +342,7 @@ const handleLogout = async () => {
 }
 .footer-brand { display: flex; align-items: center; gap: 12px; color: #fff; }
 .footer-brand:hover { color: #fff; }
-.footer-brand .brand-mark { width: 34px; height: 34px; flex-basis: 34px; }
+.footer-brand .brand-mark { width: 38px; height: 46px; flex-basis: 38px; }
 .footer-brand > span:last-child { display: flex; flex-direction: column; }
 .footer-brand strong { font-size: 18px; }
 .footer-brand small { margin-top: 2px; color: rgba(#fff, .54); font-size: 13px; letter-spacing: .08em; }
@@ -368,7 +366,7 @@ const handleLogout = async () => {
   .header-inner { width: calc(100% - 28px); gap: 10px; }
   .header-tools { gap: 8px; }
   .brand { gap: 8px; }
-  .brand-mark { width: 32px; height: 32px; flex-basis: 32px; }
+  .brand-mark { width: 32px; height: 40px; flex-basis: 32px; }
   .brand-copy strong { max-width: 145px; overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
   .brand-copy small { display: none; }
   .language-selector { width: clamp(116px, 32vw, 138px); height: 36px; }
