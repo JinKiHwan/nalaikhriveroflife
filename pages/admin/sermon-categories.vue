@@ -24,7 +24,7 @@
 
       <div v-if="isLoading" class="empty-state">{{ language === 'mn' ? 'Уншиж байна...' : '불러오는 중...' }}</div>
       <div v-else class="category-list">
-        <div class="category-head"><span>NO.</span><span>한국어</span><span>Монгол хэл</span><span></span></div>
+        <div class="category-head"><span>NO.</span><span>한국어</span><span>Монгол хэл</span><span>{{ language === 'mn' ? 'Цаг' : '예배 시간' }}</span><span></span></div>
         <div v-for="(category, index) in draftCategories" :key="category.id" class="category-row">
           <span class="order-number">{{ String(index + 1).padStart(2, '0') }}</span>
           <label>
@@ -34,6 +34,10 @@
           <label>
             <span class="mobile-label">Монгол хэл</span>
             <input v-model.trim="category.nameMn" class="category-input" placeholder="Жишээ: Ням гарагийн мөргөл" />
+          </label>
+          <label>
+            <span class="mobile-label">{{ language === 'mn' ? 'Мөргөлийн цаг' : '예배 시간' }}</span>
+            <input v-model="category.time" type="time" step="300" class="category-input category-time-input" />
           </label>
           <button type="button" class="remove-button" :disabled="draftCategories.length === 1" @click="removeCategory(index)">
             {{ language === 'mn' ? 'Устгах' : '삭제' }}
@@ -78,6 +82,7 @@ const addCategory = () => {
     id: `worship-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     nameKo: '',
     nameMn: '',
+    time: '',
   })
   nextTick(() => document.querySelector<HTMLInputElement>('.category-row:last-child input')?.focus())
 }
@@ -91,9 +96,9 @@ const removeCategory = (index: number) => {
 const save = async () => {
   message.value = ''
   hasError.value = false
-  if (draftCategories.value.some(item => !item.nameKo.trim() || !item.nameMn.trim())) {
+  if (draftCategories.value.some(item => !item.nameKo.trim() || !item.nameMn.trim() || !item.time.trim())) {
     hasError.value = true
-    message.value = language.value === 'mn' ? 'Бүх төрлийн солонгос, монгол нэрийг бичнэ үү.' : '모든 예배 구분의 한국어와 몽골어 명칭을 입력해 주세요.'
+    message.value = language.value === 'mn' ? 'Мөргөл бүрийн солонгос, монгол нэр болон цагийг оруулна уу.' : '모든 예배 구분의 한국어·몽골어 명칭과 예배 시간을 입력해 주세요.'
     return
   }
   isSaving.value = true
@@ -127,13 +132,15 @@ onMounted(load)
 .card-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #e3e6e3; }
 .card-heading h2 { margin-bottom: 5px; font-size: 26px; }
 .card-heading p { color: #7b827d; font-size: 13px; }
-.category-head, .category-row { display: grid; grid-template-columns: 62px 1fr 1fr 70px; gap: 14px; align-items: center; }
+.category-list { overflow-x: auto; }
+.category-head, .category-row { min-width: 760px; display: grid; grid-template-columns: 62px minmax(180px,1fr) minmax(180px,1fr) 140px 70px; gap: 14px; align-items: center; }
 .category-head { padding: 0 12px 10px; color: #858b87; font-size: 13px; font-weight: 800; }
 .category-row { min-height: 70px; padding: 12px; border-top: 1px solid #e8ebe9; }
 .category-row:first-of-type { border-top-color: #d8dedb; }
 .order-number { color: #9a9f9b; font-size: 13px; font-weight: 800; }
 .category-input { width: 100%; height: 44px; padding: 0 13px; color: #303632; background: #fff; border: 1px solid #d5dcd7; border-radius: 5px; font-family: $font-body; font-size: 18px; }
 .category-input:focus { outline: 2px solid rgba(#16815d,.15); border-color: #72aa94; }
+.category-time-input { min-width: 0; font-variant-numeric: tabular-nums; }
 .mobile-label { display: none; }
 .remove-button { height: 34px; color: #9b3e36; background: #fff; border: 1px solid #d9a8a3; border-radius: 5px; cursor: pointer; font-family: $font-body; font-size: 13px; font-weight: 800; }
 .remove-button:hover { color: #fff; background: #9b3e36; border-color: #9b3e36; }
@@ -144,10 +151,11 @@ onMounted(load)
   .admin-header, .card-heading { align-items: flex-start; flex-direction: column; }
   .admin-header h1 { font-size: 36px; }
   .category-card { padding: 20px 14px; }
+  .category-list { overflow: visible; }
   .category-head { display: none; }
-  .category-row { grid-template-columns: 42px 1fr; gap: 10px; padding: 16px 4px; }
+  .category-row { min-width: 0; grid-template-columns: 42px 1fr; gap: 10px; padding: 16px 4px; }
   .category-row label, .category-row .remove-button { grid-column: 2; }
-  .order-number { grid-row: 1 / span 3; align-self: start; padding-top: 32px; }
+  .order-number { grid-row: 1 / span 4; align-self: start; padding-top: 32px; }
   .mobile-label { display: block; margin-bottom: 5px; color: #777e79; font-size: 11px; font-weight: 800; }
   .remove-button { width: 70px; }
 }

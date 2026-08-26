@@ -4,12 +4,13 @@ export interface SermonCategory {
   id: string
   nameKo: string
   nameMn: string
+  time: string
 }
 
 export const DEFAULT_SERMON_CATEGORIES: SermonCategory[] = [
-  { id: 'sunday', nameKo: '주일예배', nameMn: 'Ням гарагийн мөргөл' },
-  { id: 'wednesday', nameKo: '수요예배', nameMn: 'Лхагва гарагийн мөргөл' },
-  { id: 'friday', nameKo: '금요예배', nameMn: 'Баасан гарагийн мөргөл' },
+  { id: 'sunday', nameKo: '주일예배', nameMn: 'Ням гарагийн мөргөл', time: '11:00' },
+  { id: 'wednesday', nameKo: '수요예배', nameMn: 'Лхагва гарагийн мөргөл', time: '19:00' },
+  { id: 'friday', nameKo: '금요예배', nameMn: 'Баасан гарагийн мөргөл', time: '' },
 ]
 
 const copyDefaults = () => DEFAULT_SERMON_CATEGORIES.map(item => ({ ...item }))
@@ -28,6 +29,7 @@ export const useSermonCategories = () => {
         id: String(item?.id || '').trim(),
         nameKo: String(item?.nameKo || '').trim(),
         nameMn: String(item?.nameMn || '').trim(),
+        time: String(item?.time || '').trim(),
       }))
       .filter(item => item.id && item.nameKo && item.nameMn)
   }
