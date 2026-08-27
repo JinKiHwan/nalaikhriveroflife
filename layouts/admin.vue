@@ -12,17 +12,11 @@
       <div class="admin-navigation">
         <p class="navigation-label">{{ t('admin.navigation') }}</p>
         <nav :aria-label="t('admin.navigation')">
-          <nuxt-link to="/admin" class="navigation-item" exact-active-class="active">
+          <nuxt-link to="/admin/hero" class="navigation-item" exact-active-class="active">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 5h16v14H4V5zM4 15l4-4 3 3 3-3 6 6M16.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>{{ t('admin.memberManagement') }}</span>
-          </nuxt-link>
-          <nuxt-link to="/admin/posts" class="navigation-item" exact-active-class="active">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zM7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>{{ t('admin.postManagement') }}</span>
+            <span>{{ t('admin.heroManagement') }}</span>
           </nuxt-link>
           <nuxt-link to="/admin/sermon-categories" class="navigation-item" exact-active-class="active">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -30,11 +24,17 @@
             </svg>
             <span>{{ t('admin.sermonCategories') }}</span>
           </nuxt-link>
-          <nuxt-link to="/admin/hero" class="navigation-item" exact-active-class="active">
+          <nuxt-link to="/admin/posts" class="navigation-item" exact-active-class="active">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 5h16v14H4V5zM4 15l4-4 3 3 3-3 6 6M16.5 9a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zM7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <span>{{ t('admin.heroManagement') }}</span>
+            <span>{{ t('admin.postManagement') }}</span>
+          </nuxt-link>
+          <nuxt-link to="/admin" class="navigation-item" exact-active-class="active">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ t('admin.memberManagement') }}</span>
           </nuxt-link>
         </nav>
       </div>
